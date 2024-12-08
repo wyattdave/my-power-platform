@@ -44,7 +44,7 @@ async function getData(oEnvir){
   
   if(oUser){
     ////flows
-    eData.innerHTML+=oEnvir.displayName+" identified, user: "+oUser.fullname+", id:"+oWhoAmI.UserId+"<br>";
+    eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" identified, user: "+oUser.fullname+", id:"+oWhoAmI.UserId+"<br>";
     const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow) 
     console.log(aFlows)
     aFlows.value.forEach(flow =>{
@@ -65,7 +65,7 @@ async function getData(oEnvir){
         }
       )
     })
-    eData.innerHTML+=oEnvir.displayName+" flows found<br>";
+    eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>"+oEnvir.displayName+" flows found<br>";
     
     ////apps
     const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"'",oDataAPI.dataverse);
@@ -87,7 +87,7 @@ async function getData(oEnvir){
         }
       )
     })
-    eData.innerHTML+=oEnvir.displayName+" apps found<br>";
+    eData.innerHTML+="<i class='fa-solid fa-computer'></i>"+oEnvir.displayName+" apps found<br>";
     console.log(aAllData)
   }  
 
