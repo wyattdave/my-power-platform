@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "My Power Platform",
+  "version": "1.0.0",
+  "description": "My Year on the Power Platform",
+  "homepage_url":"https://powerdevbox.com/",
+  "icons": { 
+    "128": "icon128.png" 
+    },
+  "action": {
+    "default_icon": {
+      "128": "icon128.png"
+    },
+    "default_title": "Exceptions"
+  },
+  "permissions": ["activeTab", "scripting", "tabs","webRequest"],
+  "host_permissions": [
+    "https://*.api.flow.microsoft.com/*",
+    "https://make.powerautomate.com/*",
+    "https://make.powerapps.com/*",
+    "https://*.dynamics.com/api/data/v9*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
