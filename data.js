@@ -6,10 +6,11 @@ let bFirst=false;
 let oDataAPI;
 let aAllData=[];
 let iAPICount=0;
-
+let aEnvironmentsMaster=[]
 const eData=document.getElementById("data");
+const eDate=document.getElementById("input-date");
 
-console.log(dDate);
+eDate.addEventListener("change", setDate);
 
 document.addEventListener("DOMContentLoaded", () => {
   chrome.runtime.sendMessage({ type: "REQUEST_DATA" }, (response) => {
@@ -24,10 +25,18 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+function setDate(){
+   sDate= eDate.value;
+   eData.innerHTML="";
+   aEnvironmentsMaster.forEach(envir =>{    
+    getData(envir)
+  })
+}
+
 async function load(){
-  const aEnvironments=await getEnvironments(oDataAPI.envirs,oDataAPI.url)
-  console.log(aEnvironments)
-  aEnvironments.forEach(envir =>{    
+  aEnvironmentsMaster=await getEnvironments(oDataAPI.envirs,oDataAPI.url)
+  console.log(aEnvironmentsMaster)
+  aEnvironmentsMaster.forEach(envir =>{    
     getData(envir)
   })
   
@@ -208,7 +217,7 @@ async function getComponents(oEnvir,sol){
     }
   )
   iAPICount++;
-  if(iAPICount==aEnvironments.length){
+  if(iAPICount==aEnvironmentsMaster.length){
     console.log(aAllData)
   }
 }
