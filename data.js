@@ -38,8 +38,7 @@ async function load(){
   console.log(aEnvironmentsMaster)
   aEnvironmentsMaster.forEach(envir =>{    
     getData(envir)
-  })
-  
+  })  
 }
 
 
@@ -61,8 +60,8 @@ async function getData(oEnvir){
     const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow) 
     if(aFlows){
       aFlows.value.forEach(flow =>{
-
-        if(new Date(flow.properties.createdTime)>dDate){
+        const dCreated=new Date(flow.properties.createdTime);
+        if(dCreated>dDate){
           aAllData.push(
             {
               type:"flow",
@@ -76,7 +75,8 @@ async function getData(oEnvir){
               displayName:flow.properties.displayName,
               createdTime:flow.properties.createdTime,
               isManaged:flow.properties.isManaged,
-              trigger:flow.properties.definitionSummary.triggers[0].type
+              trigger:flow.properties.definitionSummary.triggers[0].type,
+              month:dCreated.getMonth()+1
             }
           )
         }      
@@ -102,7 +102,8 @@ async function getData(oEnvir){
             displayName:app.displayName,
             createdTime:app.createdtime,
             isManaged:app.ismanaged,
-            appUrl:app.appopenuri
+            appUrl:app.appopenuri,
+            month:new Date(app.createdtime).getMonth()+1
           }
         )
       })
@@ -115,7 +116,7 @@ async function getData(oEnvir){
       aBots.value.forEach(bot =>{
         aAllData.push(
           {
-            type:"copilot agent",
+            type:"agent",
             environment:{
               displayName:oEnvir.displayName,
               id:oEnvir.id,
@@ -126,7 +127,8 @@ async function getData(oEnvir){
             displayName:bot.name,
             createdTime:bot.createdon,
             isManaged:bot.ismanaged,
-            triggger:bot.authenticationtrigger
+            triggger:bot.authenticationtrigger,
+            month:new Date(bot.createdon).getMonth()+1
           }
         )
       })
@@ -137,7 +139,7 @@ async function getData(oEnvir){
     if(aSolutions){
       aSolutions.value.forEach(sol =>{       
         getComponents(oEnvir,sol)
-      })
+      })      
       eData.innerHTML+="<i class='fa-solid fa-box-open'></i>"+oEnvir.displayName+" solutions found<br>";
     }
 
@@ -158,7 +160,8 @@ async function getData(oEnvir){
             displayName:con.connectionreferencedisplayname,
             createdTime:con.createdon,
             isManaged:con.ismanaged,
-            connectionid:con.connectionid
+            connectionid:con.connectionid,
+            month:new Date(con.createdon).getMonth()+1
           }
         )
       })
@@ -182,14 +185,20 @@ async function getData(oEnvir){
              displayName:eva.displayname,
              createdTime:eva.createdon,
              isManaged:eva.ismanaged,
-             variableType:eva.type
+             variableType:eva.type,
+             month:new Date(eva.createdon).getMonth()+1
            }
          )
        })
        eData.innerHTML+="<i class='fa-solid fa-database'></i>"+oEnvir.displayName+" environment variables found<br>";
      }    
   }  
-
+  iAPICount++;
+  if(iAPICount==aEnvironmentsMaster.length){
+    console.log(aAllData);
+    loadCharts(aAllData)
+  }
+ 
 
 
 }
@@ -213,13 +222,11 @@ async function getComponents(oEnvir,sol){
       contents:{
         flows:aComponents.value.filter(item =>{return item.componenttype == 29}).length,
         components:aComponents.value.length
-      }
+      },
+      month:new Date(sol.createdon).getMonth()+1
     }
   )
-  iAPICount++;
-  if(iAPICount==aEnvironmentsMaster.length){
-    console.log(aAllData)
-  }
+  
 }
 
 async function getEnvironments(sEnvirToken, sEnvirURL) {
