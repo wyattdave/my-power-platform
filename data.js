@@ -1,13 +1,15 @@
 let sApiUrlFlow = 'https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/';
 let sApiUrlApp="https://<tenantID>.tenant.api.powerplatform.com/powerapps/environments?api-version=1";
-
-
+const dDate = new Date(new Date().getFullYear()+"-01-01");
+let sDate= dDate.getFullYear()+"-"+(dDate.getMonth()+1)+"-"+(dDate.getDate()+1);
+let bFirst=false;
 let oDataAPI;
 let aAllData=[];
+let iAPICount=0;
 
 const eData=document.getElementById("data");
 
-console.log(eData.innerText);
+console.log(dDate);
 
 document.addEventListener("DOMContentLoaded", () => {
   chrome.runtime.sendMessage({ type: "REQUEST_DATA" }, (response) => {
@@ -15,8 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (response) {
       oDataAPI=response;
       load();
-      console.log(oDataAPI);
-      
+      console.log(oDataAPI);    
     } else {
       console.error("Failed to receive data from the background script.");
     }
@@ -29,68 +30,187 @@ async function load(){
   aEnvironments.forEach(envir =>{    
     getData(envir)
   })
+  
 }
 
 
 async function getData(oEnvir){
-  let bContinue=true;
-  
+    
   ////get user
   const oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,0);
-  console.log(oWhoAmI)
   const sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
   const oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse,0)
-  console.log(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01")
   
+  if(bFirst){
+    eData.innerHTML+="Hello "+oUser.fullname+"<br>";
+  }
+  eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
+
   if(oUser){
     ////flows
-    eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" identified, user: "+oUser.fullname+", id:"+oWhoAmI.UserId+"<br>";
+   
     const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow) 
-    console.log(aFlows)
-    aFlows.value.forEach(flow =>{
-      aAllData.push(
-        {
-          type:"flow",
-          environment:{
-            displayName:oEnvir.displayName,
-            id:oEnvir.id,
-            url:oEnvir.dyn
-          },
-          id:flow.name,
-          dataverseId:flow.properties.workflowEntityId,
-          displayName:flow.properties.displayName,
-          createdTime:flow.properties.createdTime,
-          isManaged:flow.properties.isManaged,
-          trigger:flow.properties.definitionSummary.triggers[0].type
-        }
-      )
-    })
-    eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>"+oEnvir.displayName+" flows found<br>";
+    if(aFlows){
+      aFlows.value.forEach(flow =>{
+
+        if(new Date(flow.properties.createdTime)>dDate){
+          aAllData.push(
+            {
+              type:"flow",
+              environment:{
+                displayName:oEnvir.displayName,
+                id:oEnvir.id,
+                url:oEnvir.dyn
+              },
+              id:flow.name,
+              dataverseId:flow.properties.workflowEntityId,
+              displayName:flow.properties.displayName,
+              createdTime:flow.properties.createdTime,
+              isManaged:flow.properties.isManaged,
+              trigger:flow.properties.definitionSummary.triggers[0].type
+            }
+          )
+        }      
+      })
+      eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>"+oEnvir.displayName+" flows found<br>";
+    }
+   
     
     ////apps
-    const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"'",oDataAPI.dataverse);
-    aApps.value.forEach(app =>{
-      aAllData.push(
-        {
-          type:"app",
-          environment:{
-            displayName:oEnvir.displayName,
-            id:oEnvir.id,
-            url:oEnvir.dyn
-          },
-          id:app.uniquecanvasappid,
-          dataverseId:app.canvasappid,
-          displayName:app.displayName,
-          createdTime:app.createdtime,
-          isManaged:app.ismanaged,
-          appUrl:app.appopenuri
-        }
-      )
-    })
-    eData.innerHTML+="<i class='fa-solid fa-computer'></i>"+oEnvir.displayName+" apps found<br>";
-    console.log(aAllData)
+    const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdtime gt "+sDate,oDataAPI.dataverse);
+    if(aApps){
+      aApps.value.forEach(app =>{
+        aAllData.push(
+          {
+            type:"app",
+            environment:{
+              displayName:oEnvir.displayName,
+              id:oEnvir.id,
+              url:oEnvir.dyn
+            },
+            id:app.uniquecanvasappid,
+            dataverseId:app.canvasappid,
+            displayName:app.displayName,
+            createdTime:app.createdtime,
+            isManaged:app.ismanaged,
+            appUrl:app.appopenuri
+          }
+        )
+      })
+      eData.innerHTML+="<i class='fa-solid fa-computer'></i>"+oEnvir.displayName+" apps found<br>";
+    }
+    
+    ////agents
+    const aBots =await fetchAPIData(oEnvir.url+"/api/data/v9.2/bots?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
+    if(aBots){
+      aBots.value.forEach(bot =>{
+        aAllData.push(
+          {
+            type:"copilot agent",
+            environment:{
+              displayName:oEnvir.displayName,
+              id:oEnvir.id,
+              url:oEnvir.dyn
+            },
+            id:bot.schemaname,
+            dataverseId:bot.botid,
+            displayName:bot.name,
+            createdTime:bot.createdon,
+            isManaged:bot.ismanaged,
+            triggger:bot.authenticationtrigger
+          }
+        )
+      })
+      eData.innerHTML+="<i class='fa-solid fa-robot'></i>"+oEnvir.displayName+" copilot agents found<br>";
+    }
+    ///solutions
+    const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
+    if(aSolutions){
+      aSolutions.value.forEach(sol =>{       
+        getComponents(oEnvir,sol)
+      })
+      eData.innerHTML+="<i class='fa-solid fa-box-open'></i>"+oEnvir.displayName+" solutions found<br>";
+    }
+
+    ////connection refs
+    const aConnections =await fetchAPIData(oEnvir.url+"/api/data/v9.2/connectionreferences?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
+    if(aConnections){
+      aConnections.value.forEach(con =>{
+        aAllData.push(
+          {
+            type:"connection reference",
+            environment:{
+              displayName:oEnvir.displayName,
+              id:oEnvir.id,
+              url:oEnvir.dyn
+            },
+            id:con.connectionreferencelogicalname,
+            dataverseId:con.connectionreferenceid,
+            displayName:con.connectionreferencedisplayname,
+            createdTime:con.createdon,
+            isManaged:con.ismanaged,
+            connectionid:con.connectionid
+          }
+        )
+      })
+      eData.innerHTML+="<i class='fa-solid fa-plug'></i>"+oEnvir.displayName+" connection references found<br>";
+    }   
+    
+     ////environment variables
+     const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
+     if(aVaraiables){
+      aVaraiables.value.forEach(eva =>{
+         aAllData.push(
+           {
+             type:"environment variable",
+             environment:{
+               displayName:oEnvir.displayName,
+               id:oEnvir.id,
+               url:oEnvir.dyn
+             },
+             id:eva.schemaname,
+             dataverseId:eva.environmentvariabledefinitionid,
+             displayName:eva.displayname,
+             createdTime:eva.createdon,
+             isManaged:eva.ismanaged,
+             variableType:eva.type
+           }
+         )
+       })
+       eData.innerHTML+="<i class='fa-solid fa-database'></i>"+oEnvir.displayName+" environment variables found<br>";
+     }    
   }  
 
+
+
+}
+
+async function getComponents(oEnvir,sol){
+  console.log(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_solutionid_value eq '"+sol.solutionid+"'")
+  const aComponents =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_solutionid_value eq '"+sol.solutionid+"'",oDataAPI.dataverse);
+  aAllData.push(
+    {
+      type:"solution",
+      environment:{
+        displayName:oEnvir.displayName,
+        id:oEnvir.id,
+        url:oEnvir.dyn
+      },
+      id:sol.uniquename,
+      dataverseId:sol.solutionid,
+      displayName:sol.friendlyname,
+      createdTime:sol.createdon,
+      isManaged:sol.ismanaged,
+      contents:{
+        flows:aComponents.value.filter(item =>{return item.componenttype == 29}).length,
+        components:aComponents.value.length
+      }
+    }
+  )
+  iAPICount++;
+  if(iAPICount==aEnvironments.length){
+    console.log(aAllData)
+  }
 }
 
 async function getEnvironments(sEnvirToken, sEnvirURL) {
@@ -129,7 +249,7 @@ async function getEnvironments(sEnvirToken, sEnvirURL) {
 
 
 async function fetchAPIData(url, token) {
-  try {
+//  try {
     const options = {
       headers: {
         Authorization: token
@@ -143,8 +263,7 @@ async function fetchAPIData(url, token) {
 
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('Error fetching API data:', error);
-    return 'Error fetching API data: '+ error
-  }
+//  } catch (error) {
+//    console.error('Error fetching API data:', error);
+//  }
 }
