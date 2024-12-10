@@ -48,76 +48,66 @@
           </div>
         <br>
         <label for="load">Dater Loading..</label>
-        <div id="data"></div>
+        <div id="data" style="max-height:75vh; overflow-y: auto;"></div>
     </div>
     <br>
-    
     <div class="col-sm-9">
-      <div class="well">
-        <h4>Dashboard</h4>
-        <canvas id="timelineChart" style="width:100%; height:50vh"></canvas>
-      </div>
-      <div class="row">
-        <div class="col-sm-3">
-          <div class="well">
-            <h4>Users</h4>
-            <p>1 Million</p> 
-          </div>
+        <div class="row">
+            <div class="col-sm-9">
+                <div class="well">
+                    <h4>Timeline</h4>
+                    <canvas id="timelineChart" style="height:40vh"></canvas>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="well">
+                    <h4>Components</h4>
+                    <canvas id="componentChart" style=" height:40vh"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="col-sm-3">
-          <div class="well">
-            <h4>Pages</h4>
-            <p>100 Million</p> 
-          </div>
+        <div class="row">
+            <div class="col-sm-3">
+            <div class="well">
+                <h4>Environments</h4>
+                <div id="environments" style="width:25%; height:10vh"></div>            
+            </div>
+            </div>
+            <div class="col-sm-3">
+            <div class="well">
+                <h4>Solutions</h4>
+                <canvas id="solutionChart" style="width:25%; height:10vh"></canvas>
+            </div>
+            </div>
+            <div class="col-sm-3">
+            <div class="well">
+                <h4>Connection References</h4>
+                <canvas id="connectionChart" style="width:25%; height:10vh"></canvas>
+            </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="well">
+                    <h4>Environment Variables</h4>
+                    <canvas id="variableChart" style="width:25%; height:10vh"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="col-sm-3">
-          <div class="well">
-            <h4>Sessions</h4>
-            <p>10 Million</p> 
-          </div>
+        <div class="row">
+            <div class="col-sm-8">
+            <div class="well">
+                <h4>Components</h4>
+                <canvas id="envirChart" style=" height:15vh"></canvas>
+            </div>
+            </div>
+            <div class="col-sm-4">
+            <div class="well">
+                <h4>Pages</h4>
+                <p>100 Million</p> 
+            </div>
+            </div>
+
         </div>
-        <div class="col-sm-3">
-          <div class="well">
-            <h4>Bounce</h4>
-            <p>30%</p> 
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-sm-4">
-          <div class="well">
-            <p>Text</p> 
-            <p>Text</p> 
-            <p>Text</p> 
-          </div>
-        </div>
-        <div class="col-sm-4">
-          <div class="well">
-            <p>Text</p> 
-            <p>Text</p> 
-            <p>Text</p> 
-          </div>
-        </div>
-        <div class="col-sm-4">
-          <div class="well">
-            <p>Text</p> 
-            <p>Text</p> 
-            <p>Text</p> 
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-sm-8">
-          <div class="well">
-            <p>Text</p> 
-          </div>
-        </div>
-        <div class="col-sm-4">
-          <div class="well">
-            <p>Text</p> 
-          </div>
-        </div>
-      </div>
+     </div>
     </div>
   </div>
 </div>

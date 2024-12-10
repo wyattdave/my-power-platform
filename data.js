@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (response) {
       oDataAPI=response;
       load();
-      console.log(oDataAPI);    
     } else {
       console.error("Failed to receive data from the background script.");
     }
@@ -43,18 +42,30 @@ async function load(){
 
 
 async function getData(oEnvir){
-    
+  let oWhoAmI;
+  let sURLuser;
+  let oUser;
   ////get user
-  const oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,0);
-  const sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
-  const oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse,0)
-  
+  try{
+    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,0);
+    sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
+    oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse,0)
+  }catch(error) {
+    oWhoAmI=null;
+    sURLuser=null;
+    oUser=null;
+  }
+ 
   if(bFirst){
     eData.innerHTML+="Hello "+oUser.fullname+"<br>";
   }
-  eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
+  
 
-  if(oUser){
+  if(!oUser){
+    iAPICount++;
+    eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" failed, id: cant find<br>";  
+    }else{
+      eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
     ////flows
    
     const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow) 
@@ -185,18 +196,19 @@ async function getData(oEnvir){
              displayName:eva.displayname,
              createdTime:eva.createdon,
              isManaged:eva.ismanaged,
-             variableType:eva.type,
+             variableType:variableType(eva.type),
              month:new Date(eva.createdon).getMonth()+1
            }
          )
        })
        eData.innerHTML+="<i class='fa-solid fa-database'></i>"+oEnvir.displayName+" environment variables found<br>";
-     }    
+     }
+     iAPICount++;      
   }  
-  iAPICount++;
+
   if(iAPICount==aEnvironmentsMaster.length){
     console.log(aAllData);
-    loadCharts(aAllData)
+    loadCharts(aAllData,aEnvironmentsMaster)
   }
  
 
@@ -204,7 +216,6 @@ async function getData(oEnvir){
 }
 
 async function getComponents(oEnvir,sol){
-  console.log(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_solutionid_value eq '"+sol.solutionid+"'")
   const aComponents =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_solutionid_value eq '"+sol.solutionid+"'",oDataAPI.dataverse);
   aAllData.push(
     {
@@ -261,11 +272,30 @@ async function getEnvironments(sEnvirToken, sEnvirURL) {
   }
 }
 
-
+function variableType(iVar){
+  if(iVar==100000000){
+    return "String"
+  }
+  if(iVar==100000001){
+    return "Number"
+  }
+  if(iVar==100000002){
+    return "Boolean"
+  }
+  if(iVar==100000003){
+    return "JSON"
+  }
+  if(iVar==100000004){
+    return "Data Source"
+  }
+  if(iVar==100000005){
+    return "Secret"
+  }
+}
 
 
 async function fetchAPIData(url, token) {
-//  try {
+  try {
     const options = {
       headers: {
         Authorization: token
@@ -279,7 +309,8 @@ async function fetchAPIData(url, token) {
 
     const data = await response.json();
     return data;
-//  } catch (error) {
-//    console.error('Error fetching API data:', error);
-//  }
+ } catch (error) {
+   console.error('Error fetching API data:', error);
+   return null
+ }
 }
