@@ -17,7 +17,8 @@ let sApiUrlApp="https://<tenantID>.tenant.api.powerplatform.com/powerapps/enviro
     (async () => {
       chrome.windows.create({
         url: chrome.runtime.getURL("index.html"),
-        type:"popup"
+        type:"popup",
+        state:"maximized"
       });   
     })(); 
   });

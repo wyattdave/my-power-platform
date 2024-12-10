@@ -19,10 +19,16 @@
     .icon{
         height: 50px;
     }
+    .footer{
+      position: fixed;
+      bottom:20px;
+    }
+ 
         
     /* On small screens, set height to 'auto' for the grid */
     @media screen and (max-width: 767px) {
       .row.content {height: auto;} 
+      .footer {display: none;}
     }
   </style>
 </head>
@@ -45,69 +51,52 @@
             <label for="date">Date From</label>
             <input type="date" class="form-control" id="input-date" aria-describedby="Date From">
             <small id="dateHelp" class="form-text text-muted">Select when you want the data from</small>
+            <input type="date" class="form-control" id="input-dateTo" aria-describedby="Date To">
+            <small id="dateToHelp" class="form-text text-muted">Select when you want the data to</small>
+            <br>
+            <button id="button-update" type="button" class="btn btn-primary">Update</button>
           </div>
+        <label for="load" id="sideTitle">Data Loading..</label>
+        <div id="data" style="max-height:65vh; overflow-y: auto;"></div>
         <br>
-        <label for="load">Dater Loading..</label>
-        <div id="data" style="max-height:75vh; overflow-y: auto;"></div>
+        <label class="footer"><a href="https://dev.to/wyattdave " target="_blank"><img src="assets/img/wyattdave.png" style="height:20px;padding-right:10px"/>&nbsp;https://dev.to/wyattdave</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://powerdevbox.com" target="_blank"><img src="assets/img/power devbox black.png" style="height:20px;padding-right:10px"/></a></label>
     </div>
     <br>
-    <div class="col-sm-9">
-        <div class="row">
-            <div class="col-sm-9">
-                <div class="well">
-                    <h4>Timeline</h4>
-                    <canvas id="timelineChart" style="height:40vh"></canvas>
-                </div>
-            </div>
-            <div class="col-sm-3">
-                <div class="well">
-                    <h4>Components</h4>
-                    <canvas id="componentChart" style=" height:40vh"></canvas>
-                </div>
+    <div class="col-sm-9"> 
+      <div class="row">
+        <div class="col-sm-9">
+            <div class="well">
+                <h4>Timeline</h4>
+                <canvas id="timelineChart" style="height:40vh"></canvas>
             </div>
         </div>
-        <div class="row">
-            <div class="col-sm-3">
-            <div class="well">
-                <h4>Environments</h4>
-                <div id="environments" style="width:25%; height:10vh"></div>            
-            </div>
-            </div>
-            <div class="col-sm-3">
-            <div class="well">
-                <h4>Solutions</h4>
-                <canvas id="solutionChart" style="width:25%; height:10vh"></canvas>
-            </div>
-            </div>
-            <div class="col-sm-3">
-            <div class="well">
-                <h4>Connection References</h4>
-                <canvas id="connectionChart" style="width:25%; height:10vh"></canvas>
-            </div>
-            </div>
-            <div class="col-sm-3">
-                <div class="well">
-                    <h4>Environment Variables</h4>
-                    <canvas id="variableChart" style="width:25%; height:10vh"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-8">
+        <div class="col-sm-3">
             <div class="well">
                 <h4>Components</h4>
-                <canvas id="envirChart" style=" height:15vh"></canvas>
+                <canvas id="componentChart" style=" height:40vh"></canvas>
             </div>
-            </div>
-            <div class="col-sm-4">
+        </div> 
+      </div>       
+      <div class="row">
+        <div class="col-sm-4">
+          <div class="well">
+              <h4>Solutions</h4>
+              <canvas id="solutionChart" style="width:25%; height:30vh"></canvas>
+          </div>
+        </div>            
+        <div class="col-sm-4">
             <div class="well">
-                <h4>Pages</h4>
-                <p>100 Million</p> 
+                <h4>Environment Variables</h4>
+                <canvas id="variableChart" style="width:25%; height:30vh"></canvas>
             </div>
-            </div>
-
         </div>
-     </div>
+        <div class="col-sm-4">
+          <div class="well">
+              <h4>Connection References</h4>
+              <canvas id="connectionChart" style="width:25%; height:30vh"></canvas>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

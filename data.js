@@ -1,316 +1,330 @@
-let sApiUrlFlow = 'https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/';
-let sApiUrlApp="https://<tenantID>.tenant.api.powerplatform.com/powerapps/environments?api-version=1";
-const dDate = new Date(new Date().getFullYear()+"-01-01");
-let sDate= dDate.getFullYear()+"-"+(dDate.getMonth()+1)+"-"+(dDate.getDate()+1);
-let bFirst=false;
-let oDataAPI;
-let aAllData=[];
-let iAPICount=0;
-let aEnvironmentsMaster=[]
-const eData=document.getElementById("data");
-const eDate=document.getElementById("input-date");
+let timeLineChart;
+let solutionChart;
+let variableChart;
+let connectionChart;
+let componentChart;
 
-eDate.addEventListener("change", setDate);
-
-document.addEventListener("DOMContentLoaded", () => {
-  chrome.runtime.sendMessage({ type: "REQUEST_DATA" }, (response) => {
-    console.log(response)
-    if (response) {
-      oDataAPI=response;
-      load();
-    } else {
-      console.error("Failed to receive data from the background script.");
-    }
-  });
-});
-
-function setDate(){
-   sDate= eDate.value;
-   eData.innerHTML="";
-   aEnvironmentsMaster.forEach(envir =>{    
-    getData(envir)
-  })
-}
-
-async function load(){
-  aEnvironmentsMaster=await getEnvironments(oDataAPI.envirs,oDataAPI.url)
-  console.log(aEnvironmentsMaster)
-  aEnvironmentsMaster.forEach(envir =>{    
-    getData(envir)
-  })  
-}
-
-
-async function getData(oEnvir){
-  let oWhoAmI;
-  let sURLuser;
-  let oUser;
-  ////get user
-  try{
-    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,0);
-    sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
-    oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse,0)
-  }catch(error) {
-    oWhoAmI=null;
-    sURLuser=null;
-    oUser=null;
-  }
- 
-  if(bFirst){
-    eData.innerHTML+="Hello "+oUser.fullname+"<br>";
-  }
-  
-
-  if(!oUser){
-    iAPICount++;
-    eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" failed, id: cant find<br>";  
-    }else{
-      eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
-    ////flows
+function loadCharts(aData,aEnvironments,bDestroy){
    
-    const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow) 
-    if(aFlows){
-      aFlows.value.forEach(flow =>{
-        const dCreated=new Date(flow.properties.createdTime);
-        if(dCreated>dDate){
-          aAllData.push(
-            {
-              type:"flow",
-              environment:{
-                displayName:oEnvir.displayName,
-                id:oEnvir.id,
-                url:oEnvir.dyn
-              },
-              id:flow.name,
-              dataverseId:flow.properties.workflowEntityId,
-              displayName:flow.properties.displayName,
-              createdTime:flow.properties.createdTime,
-              isManaged:flow.properties.isManaged,
-              trigger:flow.properties.definitionSummary.triggers[0].type,
-              month:dCreated.getMonth()+1
-            }
-          )
-        }      
-      })
-      eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>"+oEnvir.displayName+" flows found<br>";
-    }
-   
-    
-    ////apps
-    const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdtime gt "+sDate,oDataAPI.dataverse);
-    if(aApps){
-      aApps.value.forEach(app =>{
-        aAllData.push(
-          {
-            type:"app",
-            environment:{
-              displayName:oEnvir.displayName,
-              id:oEnvir.id,
-              url:oEnvir.dyn
-            },
-            id:app.uniquecanvasappid,
-            dataverseId:app.canvasappid,
-            displayName:app.displayName,
-            createdTime:app.createdtime,
-            isManaged:app.ismanaged,
-            appUrl:app.appopenuri,
-            month:new Date(app.createdtime).getMonth()+1
-          }
-        )
-      })
-      eData.innerHTML+="<i class='fa-solid fa-computer'></i>"+oEnvir.displayName+" apps found<br>";
-    }
-    
-    ////agents
-    const aBots =await fetchAPIData(oEnvir.url+"/api/data/v9.2/bots?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
-    if(aBots){
-      aBots.value.forEach(bot =>{
-        aAllData.push(
-          {
-            type:"agent",
-            environment:{
-              displayName:oEnvir.displayName,
-              id:oEnvir.id,
-              url:oEnvir.dyn
-            },
-            id:bot.schemaname,
-            dataverseId:bot.botid,
-            displayName:bot.name,
-            createdTime:bot.createdon,
-            isManaged:bot.ismanaged,
-            triggger:bot.authenticationtrigger,
-            month:new Date(bot.createdon).getMonth()+1
-          }
-        )
-      })
-      eData.innerHTML+="<i class='fa-solid fa-robot'></i>"+oEnvir.displayName+" copilot agents found<br>";
-    }
-    ///solutions
-    const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
-    if(aSolutions){
-      aSolutions.value.forEach(sol =>{       
-        getComponents(oEnvir,sol)
-      })      
-      eData.innerHTML+="<i class='fa-solid fa-box-open'></i>"+oEnvir.displayName+" solutions found<br>";
+    if(bDestroy){
+        destroyCharts()
     }
 
-    ////connection refs
-    const aConnections =await fetchAPIData(oEnvir.url+"/api/data/v9.2/connectionreferences?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
-    if(aConnections){
-      aConnections.value.forEach(con =>{
-        aAllData.push(
-          {
-            type:"connection reference",
-            environment:{
-              displayName:oEnvir.displayName,
-              id:oEnvir.id,
-              url:oEnvir.dyn
-            },
-            id:con.connectionreferencelogicalname,
-            dataverseId:con.connectionreferenceid,
-            displayName:con.connectionreferencedisplayname,
-            createdTime:con.createdon,
-            isManaged:con.ismanaged,
-            connectionid:con.connectionid,
-            month:new Date(con.createdon).getMonth()+1
-          }
-        )
-      })
-      eData.innerHTML+="<i class='fa-solid fa-plug'></i>"+oEnvir.displayName+" connection references found<br>";
-    }   
-    
-     ////environment variables
-     const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate,oDataAPI.dataverse);
-     if(aVaraiables){
-      aVaraiables.value.forEach(eva =>{
-         aAllData.push(
-           {
-             type:"environment variable",
-             environment:{
-               displayName:oEnvir.displayName,
-               id:oEnvir.id,
-               url:oEnvir.dyn
-             },
-             id:eva.schemaname,
-             dataverseId:eva.environmentvariabledefinitionid,
-             displayName:eva.displayname,
-             createdTime:eva.createdon,
-             isManaged:eva.ismanaged,
-             variableType:variableType(eva.type),
-             month:new Date(eva.createdon).getMonth()+1
-           }
-         )
-       })
-       eData.innerHTML+="<i class='fa-solid fa-database'></i>"+oEnvir.displayName+" environment variables found<br>";
-     }
-     iAPICount++;      
-  }  
+    let aEnvironmentData=[];
 
-  if(iAPICount==aEnvironmentsMaster.length){
-    console.log(aAllData);
-    loadCharts(aAllData,aEnvironmentsMaster)
-  }
- 
+    aEnvironments.forEach(envir =>{
+        const aThisEnvironment=aData.filter(item => {return item.environment.id==envir.id});
+        aEnvironmentData.push({
+            displayName:envir.displayName,
+            id:envir.id,
+            flows: aThisEnvironment.filter(item =>{return item.type=="flow"}).length,
+            apps: aThisEnvironment.filter(item =>{return item.type=="app"}).length,
+            agents: aThisEnvironment.filter(item =>{return item.type=="agent"}).length,
+            solutions: aThisEnvironment.filter(item =>{return item.type=="solution"}).length,
+            connectionReferences: aThisEnvironment.filter(item =>{return item.type=="connectionReferences"}).length,
+            environmentVariables: aThisEnvironment.filter(item =>{return item.type=="environmentVariable"}).length,
+            components:aThisEnvironment.length
+        })
+    })
 
 
-}
+        ///timeline
+    let oTimelineFlow=[];  
+    let oTimelineApp=[];  
+    let oTimelineAgent=[];    
 
-async function getComponents(oEnvir,sol){
-  const aComponents =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_solutionid_value eq '"+sol.solutionid+"'",oDataAPI.dataverse);
-  aAllData.push(
-    {
-      type:"solution",
-      environment:{
-        displayName:oEnvir.displayName,
-        id:oEnvir.id,
-        url:oEnvir.dyn
-      },
-      id:sol.uniquename,
-      dataverseId:sol.solutionid,
-      displayName:sol.friendlyname,
-      createdTime:sol.createdon,
-      isManaged:sol.ismanaged,
-      contents:{
-        flows:aComponents.value.filter(item =>{return item.componenttype == 29}).length,
-        components:aComponents.value.length
-      },
-      month:new Date(sol.createdon).getMonth()+1
-    }
-  )
-  
-}
-
-async function getEnvironments(sEnvirToken, sEnvirURL) {
-  try {
-    const data = await fetchAPIData(sEnvirURL, sEnvirToken);
-
-    const aEnvironments = data.value
-      .sort((a, b) => {
-        const titleA = a.properties.displayName.toUpperCase();
-        const titleB = b.properties.displayName.toUpperCase();
-        return titleA.localeCompare(titleB);
-      })
-      .map(item => {
-        let sUrl = "";
-        if (item.properties.hasOwnProperty("linkedEnvironmentMetadata")) {
-          sUrl = item.properties.linkedEnvironmentMetadata.instanceUrl;
-          sUrlAPI= item.properties.linkedEnvironmentMetadata.instanceApiUrl
+    const aTimline = aData.filter(item =>{
+        return item.type=="flow" || item.type=="app" || item.type=="agent"
+    })
+    aTimline.forEach(item => {
+        if(item.type=="flow"){
+            oTimelineFlow.push(item.month)
         }
+        if(item.type=="app"){
+            oTimelineApp.push(item.month)
+        }
+        if(item.type=="agent"){
+            oTimelineAgent.push(item.month)
+        }
+    });
 
-        return {
-          displayName: item.properties.displayName,
-          id: item.name,
-          url: sUrlAPI,
-          dyn: sUrl
-        };
-      });
-
-    return aEnvironments; // Return the processed array
-  } catch (error) {
-    console.error("Error Get Environments:", error);
-    return []; // Return an empty array as a fallback
-  }
-}
-
-function variableType(iVar){
-  if(iVar==100000000){
-    return "String"
-  }
-  if(iVar==100000001){
-    return "Number"
-  }
-  if(iVar==100000002){
-    return "Boolean"
-  }
-  if(iVar==100000003){
-    return "JSON"
-  }
-  if(iVar==100000004){
-    return "Data Source"
-  }
-  if(iVar==100000005){
-    return "Secret"
-  }
-}
-
-
-async function fetchAPIData(url, token) {
-  try {
-    const options = {
-      headers: {
-        Authorization: token
-      },
+    let aLabels = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    let data = {
+        labels: aLabels, 
+        datasets: [
+            {
+                label:"Flows",
+                fill: false,
+                pointRadius: 1,
+                borderColor: "rgba(44,123,239,0.5)",
+                data: groupArray(oTimelineFlow),
+                pointRadius: 3, 
+                pointHoverRadius: 5,
+                pointBackgroundColor: "rgba(44,123,239,0.5)",
+                pointBorderColor: "rgba(44,123,239,0.5)"
+            },
+            {
+                label:"Apps",
+                fill: false,
+                pointRadius: 1,
+                borderColor: "rgba(145,45,135,0.5)",
+                data: groupArray(oTimelineApp),
+                pointRadius: 3, 
+                pointHoverRadius: 5,
+                pointBackgroundColor: "rgba(145,45,135,0.5)",
+                pointBorderColor: "rgba(145,45,135,0.5)" 
+            },
+            {
+                label:"Agents",
+                fill: false,
+                pointRadius: 1,
+                borderColor: "rgba(20,183,0.5)",
+                data: groupArray(oTimelineAgent),
+                pointRadius: 3, 
+                pointHoverRadius: 5,
+                pointBackgroundColor: "rgba(20,183,0.5)",
+                pointBorderColor: "rgba(20,183,0.5)"
+            }
+        ]
     };
-    const response = await fetch(url, options);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    let config = {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true, 
+                    position: 'top' 
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true, 
+                    title: {
+                        display: true,
+                        text: 'Totals' 
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Months'
+                    }
+                }
+            }
+        }
+    };
 
-    const data = await response.json();
-    return data;
- } catch (error) {
-   console.error('Error fetching API data:', error);
-   return null
- }
+    timeLineChart= new Chart(document.getElementById('timelineChart').getContext('2d'), config);
+
+
+    ////solution
+    aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
+        return b.components - a.components;
+    });
+
+    aLabels =[
+        aEnvironmentData[0].displayName,
+        aEnvironmentData[1].displayName,
+        aEnvironmentData[2].displayName,
+        "All Others"
+    ]
+
+    data = {
+        labels: aLabels,
+        datasets: [{
+          label: 'Solutions',
+          data: [
+            aEnvironmentSolutions[0].solutions, 
+            aEnvironmentSolutions[1].solutions, 
+            aEnvironmentSolutions[2].solutions,
+            aEnvironmentSolutions[3].solutions,
+            aEnvironmentSolutions.splice(0,4).length
+          ],
+          backgroundColor: [
+            'rgb(66, 135, 246)',
+            'rgb(216, 46, 46)',
+            'rgb(226, 226, 56)',
+            'rgb(46, 196, 56)',
+            'rgb(176, 56, 196)'
+          ],
+          hoverOffset: 4
+        }]
+    };
+
+    config = {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    };
+    solutionChart= new Chart(document.getElementById('solutionChart').getContext('2d'), config);
+
+        
+    ////environment variable
+    aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
+        return b.components - a.components;
+    });
+
+    aLabels =["String","Number","Boolean","JSON","Data Source","Secret"]
+
+    data = {
+        labels: aLabels,
+        datasets: [{
+        label: 'Environment Variables',
+        data: [
+            aData.filter(item =>{return item.type=="environment variable" && item.variableType=="String"}).length,
+            aData.filter(item =>{return item.type=="environment variable" && item.variableType=="Number"}).length,
+            aData.filter(item =>{return item.type=="environment variable" && item.variableType=="Boolean"}).length,
+            aData.filter(item =>{return item.type=="environment variable" && item.variableType=="JSON"}).length,
+            aData.filter(item =>{return item.type=="environment variable" && item.variableType=="Data Source"}).length,
+            aData.filter(item =>{return item.type=="environment variable" && item.variableType=="Secret"}).length
+        ],
+        backgroundColor: [
+            'rgb(66, 135, 246)',
+            'rgb(216, 46, 46)',
+            'rgb(226, 226, 56)',
+            'rgb(46, 196, 56)',
+            'rgb(176, 56, 196)',
+            'rgb(236, 136, 56)'
+        ],
+        hoverOffset: 4
+        }]
+    };
+
+    config = {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    };
+    variableChart= new Chart(document.getElementById('variableChart').getContext('2d'), config);
+
+    ////connection references
+       aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
+        return b.components - a.components;
+    });
+
+    aLabels =["SharePoint","Dataverse","Outlook 365","Forms","Users 365","Teams","Power BI","Excel Business","OneDrive Buiness","Approvals","Others"]
+
+    data = {
+        labels: aLabels,
+        datasets: [{
+        label: 'Connection References',
+        data: [
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_sharepointonline"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_commondataserviceforapps"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_office365"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_microsoftforms"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_office365users"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_teams"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_powerbi"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_excelonlinebusiness"}).length,
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_onedriveforbusiness"}).length,            
+            aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_approvals"}).length,
+            aData.filter(item =>{return item.type=="connection reference"}).splice(0,10).length.length
+
+        ],
+        backgroundColor: [
+            'rgb(0, 120, 215)',
+            'rgb(102, 45, 145)',
+            'rgb(1, 115, 199)',
+            'rgb(62, 169, 92)',
+            'rgb(70, 47, 146)',
+            'rgb(255, 190, 0)',
+            'rgb(16, 124, 16)',
+            'rgb(0, 114, 198)',
+            'rgb(16, 124, 16)',
+            'rgb(100, 100, 246)',
+            'rgb(174, 174, 174)'
+        ],
+        hoverOffset: 4
+        }]
+    };
+
+    config = {
+        type: 'pie',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    };
+    connectionChart= new Chart(document.getElementById('connectionChart').getContext('2d'), config);
+
+////componets
+    aLabels =["Flows","Apps","Agents","Solutions"]
+
+    data = {
+        labels: aLabels,
+        datasets: [{
+        label: 'Component',
+        data: [
+            aData.filter(item =>{return item.type=="flow"}).length,
+            aData.filter(item =>{return item.type=="app"}).length,
+            aData.filter(item =>{return item.type=="agent" }).length,
+            aData.filter(item =>{return item.type=="solution"}).length
+        ],
+        backgroundColor: [
+            "rgba(44,123,239,0.5)",
+            "rgba(145,45,135,0.5)",
+            "rgba(20,183,0.5)",
+            "rgb(102, 45, 145)"
+        ],
+        hoverOffset: 4
+        }]
+    };
+
+    config = {
+        type: 'bar',
+        data: data,
+        options: {
+            indexAxis: 'y',
+            responsive:true,
+            barThickness:10,
+            barPercentage: 0.8,
+            scales: {
+                y: {
+                    ticks: {
+                        autoSkip: false, 
+                        maxRotation: 0,  
+                        minRotation: 0  
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false,
+                    position: 'top'
+                },
+                tooltip: {
+                    enabled: true
+                }
+            }
+        }
+    };
+    componentChart= new Chart(document.getElementById('componentChart').getContext('2d'), config);
+}
+
+function groupArray(array) {
+    const result = [0,0,0,0,0,0,0,0,0,0,0,0];
+    array.forEach(item =>{
+        result[item-1]+=1
+    })
+    return result;
+}
+
+function destroyCharts(){
+    timeLineChart.destroy();
+    solutionChart.destroy();
+    variableChart.destroy();
+    connectionChart.destroy();
+    componentChart.destroy();
 }
