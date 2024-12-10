@@ -13,7 +13,7 @@
     },
     "default_title": "Exceptions"
   },
-  "permissions": ["activeTab", "scripting", "tabs","webRequest"],
+  "permissions": ["webRequest"],
   "host_permissions": [
     "https://*.api.flow.microsoft.com/*",
     "https://make.powerautomate.com/*",
