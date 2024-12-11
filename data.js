@@ -214,7 +214,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
         return b.components - a.components;
     });
 
-    aLabels =["SharePoint","Dataverse","Outlook 365","Forms","Users 365","Teams","Power BI","Excel Business","OneDrive Buiness","Approvals","Others"]
+    aLabels =["SharePoint","Dataverse","Outlook 365","Forms","Users 365","Teams","Power BI","Excel Business","OneDrive Business","Approvals","Others"]
 
     data = {
         labels: aLabels,
