@@ -14,8 +14,14 @@ const eDate=document.getElementById("input-date");
 const eDateTo=document.getElementById("input-dateTo");
 const eUpdate=document.getElementById("button-update");
 const eLoad=document.getElementById("sideTitle");
+const eTotal=document.getElementById("span-total");
+const eCount=document.getElementById("span-count");
+const eDataDownload=document.getElementById("button-data");
+const eEnvirDownload=document.getElementById("button-envir");
 
 eUpdate.addEventListener("click", setDate);
+eDataDownload.addEventListener("click", downloadData);
+eEnvirDownload.addEventListener("click", downloadEnvironment);
 eDate.value=sDate;
 eDateTo.value=sDateTo;
 
@@ -23,13 +29,34 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.runtime.sendMessage({ type: "REQUEST_DATA" }, (response) => {
     console.log(response)
     if (response) {
-      oDataAPI=response;
-      load();
+      if(response.dataverse!="" && response.flows!=""){
+        oDataAPI=response;
+        load();      
+      } else{
+        aAllData=JSON.parse(localStorage.getItem("data"))
+        aEnvironmentsMaster=JSON.parse(localStorage.getItem("environments"))
+
+        loadCharts(aAllData,aEnvironmentsMaster,false)
+        sDate = localStorage.getItem("date");
+        sDateTo = localStorage.getItem("dateTo");
+        eDate.value=sDate;
+        eDateTo.value=sDateTo;
+        eLoad.innerHTML="Key Data Reloaded";
+      }      
+
     } else {
       console.error("Failed to receive data from the background script.");
     }
   });
 });
+
+function downloadData(){
+  downloadJSON(aAllData,"MyPowerPlatform ("+sDate+" to "+sDateTo+").json");
+}
+
+function downloadEnvironment(){
+  downloadJSON(aEnvironmentsMaster,"MyEnvironments ("+sDate+" to "+sDateTo+").json");
+}
 
 function setDate(){
    sDate= eDate.value;
@@ -49,6 +76,7 @@ function setDate(){
 async function load(){
   aEnvironmentsMaster=await getEnvironments(oDataAPI.envirs,oDataAPI.url)
   console.log(aEnvironmentsMaster)
+  eTotal.innerText=aEnvironmentsMaster.length;
   aEnvironmentsMaster.forEach(envir =>{    
     getData(envir,false)
   })  
@@ -69,17 +97,17 @@ async function getData(oEnvir,bDestroy){
     sURLuser=null;
     oUser=null;
   }
- 
-  if(bFirst){
-    eData.innerHTML+="Hello "+oUser.fullname+"<br>";
-    bFirst=false;
-  }
-  
 
   if(!oUser){
     iAPICount++;
-    eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" failed, id: cant find<br>";  
+    eData.innerHTML+="<i class='fa-solid fa-globe' style='color:red' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" failed, id: cant find<br>";  
     }else{
+
+      if(bFirst){
+        eData.innerHTML+="Hello "+oUser.fullname+"<br>";
+        bFirst=false;
+      }
+
       eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
     
       ////flows   
@@ -109,8 +137,7 @@ async function getData(oEnvir,bDestroy){
       })
       eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>&nbsp;"+oEnvir.displayName+" flows found<br>";
     }
-   
-    
+       
     ////apps
     const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdtime ge "+sDate+" and createdtime le "+sDateTo,oDataAPI.dataverse);
     if(aApps){
@@ -125,7 +152,7 @@ async function getData(oEnvir,bDestroy){
             },
             id:app.uniquecanvasappid,
             dataverseId:app.canvasappid,
-            displayName:app.displayName,
+            displayName:app.displayname,
             createdTime:app.createdtime,
             isManaged:app.ismanaged,
             appUrl:app.appopenuri,
@@ -160,6 +187,7 @@ async function getData(oEnvir,bDestroy){
       })
       eData.innerHTML+="<i class='fa-solid fa-robot'></i>&nbsp;"+oEnvir.displayName+" copilot agents found<br>";
     }
+    
     ///solutions
     const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse);
     if(aSolutions){
@@ -218,17 +246,19 @@ async function getData(oEnvir,bDestroy){
        })
        eData.innerHTML+="<i class='fa-solid fa-database'></i>&nbsp;"+oEnvir.displayName+" environment variables found<br>";
      }
-     iAPICount++;      
+     iAPICount++;   
+     eCount.innerText=iAPICount;   
   }  
 
   if(iAPICount==aEnvironmentsMaster.length){
     console.log(aAllData);
-     eLoad.innerHTML="Key Data"
-    loadCharts(aAllData,aEnvironmentsMaster,bDestroy)
+    eLoad.innerHTML="Key Data";
+    loadCharts(aAllData,aEnvironmentsMaster,bDestroy);
+    localStorage.setItem("data",JSON.stringify(aAllData));
+    localStorage.setItem("environments",JSON.stringify(aEnvironmentsMaster));
+    localStorage.setItem("date",sDate);
+    localStorage.setItem("dateTo",sDateTo);
   }
- 
-
-
 }
 
 async function getComponents(oEnvir,sol){
@@ -254,6 +284,19 @@ async function getComponents(oEnvir,sol){
     }
   )
   
+}
+
+
+function downloadJSON(data,sFileName) {
+
+  const jsonString = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = sFileName
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 async function getEnvironments(sEnvirToken, sEnvirURL) {
@@ -283,7 +326,7 @@ async function getEnvironments(sEnvirToken, sEnvirURL) {
 
     return aEnvironments; // Return the processed array
   } catch (error) {
-    console.error("Error Get Environments:", error);
+    console.log("Error Get Environments:", error);
     return []; // Return an empty array as a fallback
   }
 }
@@ -309,7 +352,6 @@ function variableType(iVar){
   }
 }
 
-
 async function fetchAPIData(url, token) {
   try {
     const options = {
@@ -326,7 +368,7 @@ async function fetchAPIData(url, token) {
     const data = await response.json();
     return data;
  } catch (error) {
-   console.error('Error fetching API data:', error);
+   console.log('Error fetching API data:', error);
    return null
  }
 }

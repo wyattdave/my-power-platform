@@ -48,13 +48,20 @@
     <div class="col-sm-3 sidenav hidden-xs">
         <h2><img src="icon256.png" class="icon" /> My Power Platform</h2>
         <div class="form-group">
-            <label for="date">Date From</label>
+            <label for="date">Range</label>
             <input type="date" class="form-control" id="input-date" aria-describedby="Date From">
             <small id="dateHelp" class="form-text text-muted">Select when you want the data from</small>
             <input type="date" class="form-control" id="input-dateTo" aria-describedby="Date To">
             <small id="dateToHelp" class="form-text text-muted">Select when you want the data to</small>
             <br>
-            <button id="button-update" type="button" class="btn btn-primary">Update</button>
+            <table>
+              <tr>
+                <td><button id="button-update" type="button" class="btn btn-primary">Update</button></td>
+                <td>&nbsp;&nbsp;<span id ="span-count">0</span>&nbsp;of&nbsp;<span id ="span-total">0</span></td>
+                <td>&nbsp;<button id="button-data" type="button" class="btn btn-primary">Data</button></td>
+                <td>&nbsp;<button id="button-envir" type="button" class="btn btn-primary">Envir</button></td>
+              </tr>
+            </table>
           </div>
         <label for="load" id="sideTitle">Data Loading..</label>
         <div id="data" style="max-height:65vh; overflow-y: auto;"></div>

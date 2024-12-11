@@ -5,8 +5,7 @@ let connectionChart;
 let componentChart;
 
 function loadCharts(aData,aEnvironments,bDestroy){
-   
-    if(bDestroy){
+     if(bDestroy){
         destroyCharts()
     }
 
@@ -48,7 +47,13 @@ function loadCharts(aData,aEnvironments,bDestroy){
         }
     });
 
-    let aLabels = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    let aLabels = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const iMaxMonth= aTimline.reduce((max, item) => Math.max(max, item.month), -Infinity);
+    const iMinMonth= aTimline.reduce((min, item) => Math.min(min, item.month), Infinity);
+
+    console.log(iMaxMonth,iMinMonth)
+    aLabels=aLabels.slice(iMinMonth,iMaxMonth);
+
     let data = {
         labels: aLabels, 
         datasets: [
@@ -89,7 +94,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
     };
 
     let config = {
-        type: 'line',
+        type: "line",
         data: data,
         options: {
             responsive: false,
@@ -97,7 +102,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
             plugins: {
                 legend: {
                     display: true, 
-                    position: 'top' 
+                    position: "top" 
                 }
             },
             scales: {
@@ -105,20 +110,20 @@ function loadCharts(aData,aEnvironments,bDestroy){
                     beginAtZero: true, 
                     title: {
                         display: true,
-                        text: 'Totals' 
+                        text: "Totals" 
                     }
                 },
                 x: {
                     title: {
                         display: true,
-                        text: 'Months'
+                        text: "Months"
                     }
                 }
             }
         }
     };
 
-    timeLineChart= new Chart(document.getElementById('timelineChart').getContext('2d'), config);
+    timeLineChart= new Chart(document.getElementById("timelineChart").getContext("2d"), config);
 
 
     ////solution
@@ -136,7 +141,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
     data = {
         labels: aLabels,
         datasets: [{
-          label: 'Solutions',
+          label: "Solutions",
           data: [
             aEnvironmentSolutions[0].solutions, 
             aEnvironmentSolutions[1].solutions, 
@@ -145,25 +150,25 @@ function loadCharts(aData,aEnvironments,bDestroy){
             aEnvironmentSolutions.splice(0,4).length
           ],
           backgroundColor: [
-            'rgb(66, 135, 246)',
-            'rgb(216, 46, 46)',
-            'rgb(226, 226, 56)',
-            'rgb(46, 196, 56)',
-            'rgb(176, 56, 196)'
+            "rgb(66, 135, 246)",
+            "rgb(216, 46, 46)",
+            "rgb(226, 226, 56)",
+            "rgb(46, 196, 56)",
+            "rgb(176, 56, 196)"
           ],
           hoverOffset: 4
         }]
     };
 
     config = {
-        type: 'doughnut',
+        type: "doughnut",
         data: data,
         options: {
             responsive: true,
             maintainAspectRatio: true
         }
     };
-    solutionChart= new Chart(document.getElementById('solutionChart').getContext('2d'), config);
+    solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);
 
         
     ////environment variable
@@ -176,7 +181,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
     data = {
         labels: aLabels,
         datasets: [{
-        label: 'Environment Variables',
+        label: "Environment Variables",
         data: [
             aData.filter(item =>{return item.type=="environment variable" && item.variableType=="String"}).length,
             aData.filter(item =>{return item.type=="environment variable" && item.variableType=="Number"}).length,
@@ -186,26 +191,26 @@ function loadCharts(aData,aEnvironments,bDestroy){
             aData.filter(item =>{return item.type=="environment variable" && item.variableType=="Secret"}).length
         ],
         backgroundColor: [
-            'rgb(66, 135, 246)',
-            'rgb(216, 46, 46)',
-            'rgb(226, 226, 56)',
-            'rgb(46, 196, 56)',
-            'rgb(176, 56, 196)',
-            'rgb(236, 136, 56)'
+            "rgb(66, 135, 246)",
+            "rgb(216, 46, 46)",
+            "rgb(226, 226, 56)",
+            "rgb(46, 196, 56)",
+            "rgb(176, 56, 196)",
+            "rgb(236, 136, 56)"
         ],
         hoverOffset: 4
         }]
     };
 
     config = {
-        type: 'doughnut',
+        type: "doughnut",
         data: data,
         options: {
             responsive: true,
             maintainAspectRatio: true
         }
     };
-    variableChart= new Chart(document.getElementById('variableChart').getContext('2d'), config);
+    variableChart= new Chart(document.getElementById("variableChart").getContext("2d"), config);
 
     ////connection references
        aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
@@ -217,7 +222,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
     data = {
         labels: aLabels,
         datasets: [{
-        label: 'Connection References',
+        label: "Connection References",
         data: [
             aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_sharepointonline"}).length,
             aData.filter(item =>{return item.type=="connection reference" && item.connector=="shared_commondataserviceforapps"}).length,
@@ -233,31 +238,31 @@ function loadCharts(aData,aEnvironments,bDestroy){
 
         ],
         backgroundColor: [
-            'rgb(0, 120, 215)',
-            'rgb(102, 45, 145)',
-            'rgb(1, 115, 199)',
-            'rgb(62, 169, 92)',
-            'rgb(70, 47, 146)',
-            'rgb(255, 190, 0)',
-            'rgb(16, 124, 16)',
-            'rgb(0, 114, 198)',
-            'rgb(16, 124, 16)',
-            'rgb(100, 100, 246)',
-            'rgb(174, 174, 174)'
+            "rgb(0, 110, 74)",//sp
+            "rgb(51, 153, 51)",//dv
+            "rgb(1, 115, 199)",//out
+            "rgb(62, 169, 92)",//form
+            "rgb(242, 80, 34)",//user
+            "rgb(70, 47, 146)",//teams
+            "rgb(255, 190, 0)",//pbi
+            "rgb(16, 124, 16)",//exc
+            "rgb(0, 114, 198)",//one
+            "rgb(100, 100, 246)",//app
+            "rgb(115, 115, 115)"//other
         ],
         hoverOffset: 4
         }]
     };
 
     config = {
-        type: 'pie',
+        type: "pie",
         data: data,
         options: {
             responsive: true,
             maintainAspectRatio: true
         }
     };
-    connectionChart= new Chart(document.getElementById('connectionChart').getContext('2d'), config);
+    connectionChart= new Chart(document.getElementById("connectionChart").getContext("2d"), config);
 
 ////componets
     aLabels =["Flows","Apps","Agents","Solutions"]
@@ -265,7 +270,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
     data = {
         labels: aLabels,
         datasets: [{
-        label: 'Component',
+        label: "Component",
         data: [
             aData.filter(item =>{return item.type=="flow"}).length,
             aData.filter(item =>{return item.type=="app"}).length,
@@ -283,10 +288,10 @@ function loadCharts(aData,aEnvironments,bDestroy){
     };
 
     config = {
-        type: 'bar',
+        type: "bar",
         data: data,
         options: {
-            indexAxis: 'y',
+            indexAxis: "y",
             responsive:true,
             barThickness:10,
             barPercentage: 0.8,
@@ -302,7 +307,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
             plugins: {
                 legend: {
                     display: false,
-                    position: 'top'
+                    position: "top"
                 },
                 tooltip: {
                     enabled: true
@@ -310,7 +315,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
             }
         }
     };
-    componentChart= new Chart(document.getElementById('componentChart').getContext('2d'), config);
+    componentChart= new Chart(document.getElementById("componentChart").getContext("2d"), config);
 }
 
 function groupArray(array) {
