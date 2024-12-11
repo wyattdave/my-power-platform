@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if(response.dataverse!="" && response.flows!=""){
         oDataAPI=response;
         load();      
-      } else{
+      } else if(localStorage.getItem("data")){
         aAllData=JSON.parse(localStorage.getItem("data"))
         aEnvironmentsMaster=JSON.parse(localStorage.getItem("environments"))
 
@@ -42,8 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
         eDate.value=sDate;
         eDateTo.value=sDateTo;
         eLoad.innerHTML="Key Data Reloaded";
+        alert("Access expired, reloaded previous data, if new update required please got to make.powerautomate.com or refresh the page");
+      }else{
+        alert("Access expired, please got to make.powerautomate.com or refresh the page");
       }      
-
     } else {
       console.error("Failed to receive data from the background script.");
     }
@@ -82,16 +84,15 @@ async function load(){
   })  
 }
 
-
 async function getData(oEnvir,bDestroy){
   let oWhoAmI;
   let sURLuser;
   let oUser;
   ////get user
   try{
-    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,0);
+    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse);
     sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
-    oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse,0)
+    oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse)
   }catch(error) {
     oWhoAmI=null;
     sURLuser=null;
@@ -160,7 +161,7 @@ async function getData(oEnvir,bDestroy){
           }
         )
       })
-      eData.innerHTML+="<i class='fa-solid fa-computer'></i>&nbsp;"+oEnvir.displayName+" apps found<br>";
+      eData.innerHTML+="<i class='fa-solid fa-laptop'></i>&nbsp;"+oEnvir.displayName+" apps found<br>";
     }
     
     ////agents
@@ -190,9 +191,11 @@ async function getData(oEnvir,bDestroy){
     
     ///solutions
     const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse);
-    if(aSolutions){
-      aSolutions.value.forEach(sol =>{       
-        getComponents(oEnvir,sol)
+    if(aSolutions){    
+      aSolutions.value.forEach(sol =>{   
+        if(!sol.uniquename.includes("msdyn")){
+          getComponents(oEnvir,sol,oWhoAmI.UserId)
+        }       
       })      
       eData.innerHTML+="<i class='fa-solid fa-box-open'></i>&nbsp;"+oEnvir.displayName+" solutions found<br>";
     }
@@ -261,31 +264,32 @@ async function getData(oEnvir,bDestroy){
   }
 }
 
-async function getComponents(oEnvir,sol){
-  const aComponents =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_solutionid_value eq '"+sol.solutionid+"'",oDataAPI.dataverse);
-  aAllData.push(
-    {
-      type:"solution",
-      environment:{
-        displayName:oEnvir.displayName,
-        id:oEnvir.id,
-        url:oEnvir.dyn
-      },
-      id:sol.uniquename,
-      dataverseId:sol.solutionid,
-      displayName:sol.friendlyname,
-      createdTime:sol.createdon,
-      isManaged:sol.ismanaged,
-      contents:{
-        flows:aComponents.value.filter(item =>{return item.componenttype == 29}).length,
-        apps:aComponents.value.filter(item =>{return item.componenttype == 300}).length,
-        var:aComponents.value.filter(item =>{return item.componenttype == 381}).length,
-        components:aComponents.value.length
-      },
-      month:new Date(sol.createdon).getMonth()+1
-    }
-  )
-  
+async function getComponents(oEnvir,sol,sUser){
+  const aComponents =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_createdby_value eq '"+sUser+"' and _solutionid_value eq '"+sol.solutionid+"'",oDataAPI.dataverse);
+  if(aComponents.value.length>0){
+    aAllData.push(
+      {
+        type:"solution",
+        environment:{
+          displayName:oEnvir.displayName,
+          id:oEnvir.id,
+          url:oEnvir.dyn
+        },
+        id:sol.uniquename,
+        dataverseId:sol.solutionid,
+        displayName:sol.friendlyname,
+        createdTime:sol.createdon,
+        isManaged:sol.ismanaged,
+        contents:{
+          flows:aComponents.value.filter(item =>{return item.componenttype == 29}).length,
+          apps:aComponents.value.filter(item =>{return item.componenttype == 300}).length,
+          var:aComponents.value.filter(item =>{return item.componenttype == 381}).length,
+          components:aComponents.value.length
+        },
+        month:new Date(sol.createdon).getMonth()+1
+      }
+    )
+  }  
 }
 
 
@@ -364,7 +368,12 @@ async function fetchAPIData(url, token) {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.log(`HTTP error! status: ${response.status}`)
+      if (response.status === 401) {
+        console.error('Unauthorized: Invalid token or credentials');
+        eData.innerHTML+="<br><b style='color:red;'>Invalid token, refresh make.powerautomate.com page to update</b><br>"
+        return null;
+      }
     }
 
     const data = await response.json();

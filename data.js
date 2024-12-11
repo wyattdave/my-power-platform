@@ -8,9 +8,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
      if(bDestroy){
         destroyCharts()
     }
-
     let aEnvironmentData=[];
-
     aEnvironments.forEach(envir =>{
         const aThisEnvironment=aData.filter(item => {return item.environment.id==envir.id});
         aEnvironmentData.push({
@@ -25,9 +23,9 @@ function loadCharts(aData,aEnvironments,bDestroy){
             components:aThisEnvironment.length
         })
     })
+   
 
-
-        ///timeline
+    ///timeline
     let oTimelineFlow=[];  
     let oTimelineApp=[];  
     let oTimelineAgent=[];    
@@ -50,8 +48,6 @@ function loadCharts(aData,aEnvironments,bDestroy){
     let aLabels = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const iMinMonth= aTimline.reduce((min, item) => Math.min(min, item.month), Infinity);
     const iMaxMonth= aTimline.reduce((max, item) => Math.max(max, item.month), -Infinity);
-
-    console.log(iMaxMonth,iMinMonth)
     aLabels=aLabels.slice(iMinMonth,iMaxMonth);
 
     let data = {
@@ -125,18 +121,18 @@ function loadCharts(aData,aEnvironments,bDestroy){
 
     timeLineChart= new Chart(document.getElementById("timelineChart").getContext("2d"), config);
 
-
+    
     ////solution
     aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
     });
 
-    aLabels =[
-        aEnvironmentData[0].displayName,
-        aEnvironmentData[1].displayName,
-        aEnvironmentData[2].displayName,
-        "All Others"
-    ]
+    const aLastSolutions=structuredClone(aEnvironmentSolutions);
+    aLabels.length=0;  
+    for(i=0;i<4;i++){
+        aLabels.push(aEnvironmentData[i].displayName)
+    }
+    if(aLabels.length>3){ aLabels.push("All Others")}
 
     data = {
         labels: aLabels,
@@ -147,7 +143,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
             aEnvironmentSolutions[1].solutions, 
             aEnvironmentSolutions[2].solutions,
             aEnvironmentSolutions[3].solutions,
-            aEnvironmentSolutions.splice(0,4).length
+            aLastSolutions.splice(0,4).length
           ],
           backgroundColor: [
             "rgb(66, 135, 246)",
@@ -169,8 +165,9 @@ function loadCharts(aData,aEnvironments,bDestroy){
         }
     };
     solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);
-
         
+   
+
     ////environment variable
     aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
@@ -213,7 +210,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
     variableChart= new Chart(document.getElementById("variableChart").getContext("2d"), config);
 
     ////connection references
-       aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
+    aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
     });
 
@@ -264,8 +261,8 @@ function loadCharts(aData,aEnvironments,bDestroy){
     };
     connectionChart= new Chart(document.getElementById("connectionChart").getContext("2d"), config);
 
-////componets
-    aLabels =["Flows","Apps","Agents","Solutions"]
+/   ///componets
+    aLabels =["Flows","Apps","Agents","Solutions"];
 
     data = {
         labels: aLabels,
@@ -317,6 +314,7 @@ function loadCharts(aData,aEnvironments,bDestroy){
     };
     componentChart= new Chart(document.getElementById("componentChart").getContext("2d"), config);
     blurbage(aData,aEnvironmentData)
+
 }
 
 function blurbage(aData,aEnvironmentData){
@@ -344,7 +342,6 @@ function blurbage(aData,aEnvironmentData){
     if(aSolutions.length>0){sSolutionVariables={displayName:aSolutions[0].displayName,count:aSolutions[0].contents.vars}}
 
 
-
     aSolutions=aData.filter(item =>{return item.type=="solution"}).sort((a, b) => {
         return b.contents.components - a.contents.components;
     });
@@ -362,6 +359,15 @@ function blurbage(aData,aEnvironmentData){
         return b.count - a.count;
     })[0].name;
 
+    if(aData.filter(item =>{return item.type=="flow"}).length>aData.filter(item =>{return item.type=="app"}).length&&
+    aData.filter(item =>{return item.type=="flow"}).length>aData.filter(item =>{return item.type=="agent"}).length)
+    {
+        sHtml+="<img src='assets/img/flow.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Flow Rider<br>"
+    }else if(Data.filter(item =>{return item.type=="app"}).length>aData.filter(item =>{return item.type=="agent"}).length){
+        sHtml+="<img src='assets/img/app.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Canvas Campbell<br>"
+    }else{
+        sHtml+="<img src='assets/img/agent.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Agent Smith<br>"
+    }    
 
     sHtml+="<b>"+aEnvironmentData.length+"</b> Environments, <b>"+aEnvironmentData.filter(env =>{return env.components>0}).length+"</b> used<br>";
     sHtml+="<b>Totals</b><br>Flows: <b>"+aData.filter(item =>{return item.type=="flow"}).length+"</b>, top trigger is <b>"+sTopTrigger+"</b><br>";
@@ -370,12 +376,10 @@ function blurbage(aData,aEnvironmentData){
     sHtml+="Connection Refs: <b>"+aData.filter(item =>{return item.type=="connection reference"}).length+"</b><br>";
     sHtml+="Env Variables: <b>"+aData.filter(item =>{return item.type=="environment variable"}).length+"</b><br>";
     sHtml+="<b>Solutions</b><br><b>"+aSolutions.length+"</b> total solutions<br>";
-    sHtml+="Most total components is <b>"+aSolutions[0].displayName+"</b> with <b>"+aSolutions[0].contents.components+"</b> components. Average size is <b>"+Math.floor(aSolutions.reduce((a, b) => a + b.contents.components, 0) / aSolutions.length)+"</b><br>";
-    sHtml+="Most flows is <b>"+sSolutionFlows.displayName+"</b> with <b>"+sSolutionFlows.count+"</b><br>"
+    sHtml+="Solution with most components is <b>"+aSolutions[0].displayName+"</b> with <b>"+aSolutions[0].contents.components+"</b> components. Average size is <b>"+Math.floor(aSolutions.reduce((a, b) => a + b.contents.components, 0) / aSolutions.length)+"</b><br>";
+    sHtml+="With the most flows is <b>"+sSolutionFlows.displayName+"</b> with <b>"+sSolutionFlows.count+"</b><br>";
     eData.innerHTML=sHtml;
 }
-
-
 
 function groupArray(array) {
     const result = [0,0,0,0,0,0,0,0,0,0,0,0];
