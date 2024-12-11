@@ -278,6 +278,8 @@ async function getComponents(oEnvir,sol){
       isManaged:sol.ismanaged,
       contents:{
         flows:aComponents.value.filter(item =>{return item.componenttype == 29}).length,
+        apps:aComponents.value.filter(item =>{return item.componenttype == 300}).length,
+        var:aComponents.value.filter(item =>{return item.componenttype == 381}).length,
         components:aComponents.value.length
       },
       month:new Date(sol.createdon).getMonth()+1

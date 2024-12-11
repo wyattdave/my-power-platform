@@ -48,8 +48,8 @@ function loadCharts(aData,aEnvironments,bDestroy){
     });
 
     let aLabels = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const iMaxMonth= aTimline.reduce((max, item) => Math.max(max, item.month), -Infinity);
     const iMinMonth= aTimline.reduce((min, item) => Math.min(min, item.month), Infinity);
+    const iMaxMonth= aTimline.reduce((max, item) => Math.max(max, item.month), -Infinity);
 
     console.log(iMaxMonth,iMinMonth)
     aLabels=aLabels.slice(iMinMonth,iMaxMonth);
@@ -316,7 +316,66 @@ function loadCharts(aData,aEnvironments,bDestroy){
         }
     };
     componentChart= new Chart(document.getElementById("componentChart").getContext("2d"), config);
+    blurbage(aData,aEnvironmentData)
 }
+
+function blurbage(aData,aEnvironmentData){
+    let sHtml="";
+    let aSolutions=[];
+   
+    aSolutions=aData.filter(item =>{return item.type=="solution"}).sort((a, b) => {
+        return b.contents.flows - a.contents.flows;
+    });
+    let sSolutionFlows={displayName:"N/A",count:0};
+    if(aSolutions.length>0){sSolutionFlows={displayName:aSolutions[0].displayName,count:aSolutions[0].contents.flows}}
+
+    aSolutions=aData.filter(item =>{return item.type=="solution"}).sort((a, b) => {
+        return b.contents.apps - a.contents.apps;
+    });
+    const aSolutionApps=aSolutions.filter(item =>{return item.type=="app"})
+    let sSolutionApps={displayName:"N/A",count:0};
+    if(aSolutions.length>0){sSolutionApps={displayName:aSolutions[0].displayName,count:aSolutions[0].contents.apps}}
+ 
+    aSolutions=aData.filter(item =>{return item.type=="solution"}).sort((a, b) => {
+        return b.contents.vars - a.contents.vars;
+    });
+    const aSolutionVariables=aSolutions.filter(item =>{return item.type=="environment reference"})
+    let sSolutionVariables={displayName:"N/A",count:0};
+    if(aSolutions.length>0){sSolutionVariables={displayName:aSolutions[0].displayName,count:aSolutions[0].contents.vars}}
+
+
+
+    aSolutions=aData.filter(item =>{return item.type=="solution"}).sort((a, b) => {
+        return b.contents.components - a.contents.components;
+    });
+    const aTriggers=aData.filter(item =>{return item.type=="flow"}).map(item => item.trigger);
+
+    let aTriggerTotals=[];
+    aTriggers.forEach(trig =>{
+        aTriggerTotals.push({
+            name:trig,
+            count:aData.filter(item =>{return item.type=="flow" && item.trigger==trig})
+        })
+    })
+
+    const sTopTrigger=aTriggerTotals.sort((a, b) => {
+        return b.count - a.count;
+    })[0].name;
+
+
+    sHtml+="<b>"+aEnvironmentData.length+"</b> Environments, <b>"+aEnvironmentData.filter(env =>{return env.components>0}).length+"</b> used<br>";
+    sHtml+="<b>Totals</b><br>Flows: <b>"+aData.filter(item =>{return item.type=="flow"}).length+"</b>, top trigger is <b>"+sTopTrigger+"</b><br>";
+    sHtml+="Apps: <b>"+aData.filter(item =>{return item.type=="app"}).length+"</b><br>";
+    sHtml+="Agents: <b>"+aData.filter(item =>{return item.type=="agent"}).length+"</b><br>";
+    sHtml+="Connection Refs: <b>"+aData.filter(item =>{return item.type=="connection reference"}).length+"</b><br>";
+    sHtml+="Env Variables: <b>"+aData.filter(item =>{return item.type=="environment variable"}).length+"</b><br>";
+    sHtml+="<b>Solutions</b><br><b>"+aSolutions.length+"</b> total solutions<br>";
+    sHtml+="Most total components is <b>"+aSolutions[0].displayName+"</b> with <b>"+aSolutions[0].contents.components+"</b> components. Average size is <b>"+Math.floor(aSolutions.reduce((a, b) => a + b.contents.components, 0) / aSolutions.length)+"</b><br>";
+    sHtml+="Most flows is <b>"+sSolutionFlows.displayName+"</b> with <b>"+sSolutionFlows.count+"</b><br>"
+    eData.innerHTML=sHtml;
+}
+
+
 
 function groupArray(array) {
     const result = [0,0,0,0,0,0,0,0,0,0,0,0];

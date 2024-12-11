@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "My Power Platform",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "My Year on the Power Platform",
   "homepage_url":"https://powerdevbox.com/",
   "icons": { 
@@ -11,7 +11,7 @@
     "default_icon": {
       "128": "icon128.png"
     },
-    "default_title": "Exceptions"
+    "default_title": "My Power P"
   },
   "permissions": ["webRequest"],
   "host_permissions": [
