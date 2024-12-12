@@ -359,11 +359,11 @@ function blurbage(aData,aEnvironmentData){
         return b.count - a.count;
     })[0].name;
 
-    if(aData.filter(item =>{return item.type=="flow"}).length>aData.filter(item =>{return item.type=="app"}).length&&
-    aData.filter(item =>{return item.type=="flow"}).length>aData.filter(item =>{return item.type=="agent"}).length)
+    if(aData.filter(item =>{return item.type=="flow"}).length>(aData.filter(item =>{return item.type=="app"}).length*2)&&
+    aData.filter(item =>{return item.type=="flow"}).length>(aData.filter(item =>{return item.type=="agent"}).length*4))
     {
         sHtml+="<img src='assets/img/flow.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Flow Rider<br>"
-    }else if(Data.filter(item =>{return item.type=="app"}).length>aData.filter(item =>{return item.type=="agent"}).length){
+    }else if(Data.filter(item =>{return item.type=="app"}).length>(aData.filter(item =>{return item.type=="agent"}).length*2)){
         sHtml+="<img src='assets/img/app.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Canvas Campbell<br>"
     }else{
         sHtml+="<img src='assets/img/agent.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Agent Smith<br>"

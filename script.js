@@ -16,12 +16,15 @@ const eUpdate=document.getElementById("button-update");
 const eLoad=document.getElementById("sideTitle");
 const eTotal=document.getElementById("span-total");
 const eCount=document.getElementById("span-count");
+const eDiv=document.getElementById("div-count");
 const eDataDownload=document.getElementById("button-data");
 const eEnvirDownload=document.getElementById("button-envir");
+const eCsvDownload=document.getElementById("button-csv");
 
 eUpdate.addEventListener("click", setDate);
 eDataDownload.addEventListener("click", downloadData);
 eEnvirDownload.addEventListener("click", downloadEnvironment);
+eCsvDownload.addEventListener("click", downloadCsv);
 eDate.value=sDate;
 eDateTo.value=sDateTo;
 
@@ -29,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.runtime.sendMessage({ type: "REQUEST_DATA" }, (response) => {
     console.log(response)
     if (response) {
-      if(response.dataverse!="" && response.flows!=""){
+      if(response.dataverse!="" && response.flow!=""){
         oDataAPI=response;
         load();      
       } else if(localStorage.getItem("data")){
@@ -60,6 +63,30 @@ function downloadEnvironment(){
   downloadJSON(aEnvironmentsMaster,"MyEnvironments ("+sDate+" to "+sDateTo+").json");
 }
 
+function downloadCsv(){
+  let aCsv=[];
+  aAllData.forEach(item =>{
+    let sDataverseId="Not solution aware";
+
+    if(item.dataverseId){sDataverseId= item.dataverseId};
+    aCsv.push({
+      displayName:item.displayName,
+      id:item.id,
+      dataverseId: sDataverseId,
+      created:item.createdTime,
+      type:item.type,
+      environment:item.environment.displayName,
+      environmentId:item.environment.id,
+      environmentsUrl:item.environment.url
+
+    })
+  })
+
+  const aHeaders=["Display_Name","Id","Dataverse_Id","Created","Type","Environment","Environment_Id","Environments_Url"];
+
+  exportCSVFile(aHeaders,aCsv,"MyPowerPlatform ("+sDate+" to "+sDateTo+")");
+}
+
 function setDate(){
    sDate= eDate.value;
    dDate= new Date(sDate);
@@ -76,7 +103,8 @@ function setDate(){
 }
 
 async function load(){
-  aEnvironmentsMaster=await getEnvironments(oDataAPI.envirs,oDataAPI.url)
+  eDiv.style.display=null;
+  aEnvironmentsMaster=await getEnvironments(oDataAPI.envirs,oDataAPI.url,"")
   console.log(aEnvironmentsMaster)
   eTotal.innerText=aEnvironmentsMaster.length;
   aEnvironmentsMaster.forEach(envir =>{    
@@ -90,21 +118,21 @@ async function getData(oEnvir,bDestroy){
   let oUser;
   ////get user
   try{
-    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse);
-    sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
-    oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse)
+    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,oEnvir.displayName);
+    
   }catch(error) {
     oWhoAmI=null;
-    sURLuser=null;
-    oUser=null;
   }
 
-  if(!oUser){
+  if(!oWhoAmI){
     iAPICount++;
     eData.innerHTML+="<i class='fa-solid fa-globe' style='color:red' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" failed, id: cant find<br>";  
     }else{
 
       if(bFirst){
+        
+        sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
+        oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse);
         eData.innerHTML+="Hello "+oUser.fullname+"<br>";
         bFirst=false;
       }
@@ -112,7 +140,7 @@ async function getData(oEnvir,bDestroy){
       eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
     
       ////flows   
-    const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow) 
+    const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow,oEnvir.displayName )
     if(aFlows){
       aFlows.value.forEach(flow =>{
         const dCreated=new Date(flow.properties.createdTime);
@@ -140,7 +168,7 @@ async function getData(oEnvir,bDestroy){
     }
        
     ////apps
-    const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdtime ge "+sDate+" and createdtime le "+sDateTo,oDataAPI.dataverse);
+    const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdtime ge "+sDate+" and createdtime le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aApps){
       aApps.value.forEach(app =>{
         aAllData.push(
@@ -165,7 +193,7 @@ async function getData(oEnvir,bDestroy){
     }
     
     ////agents
-    const aBots =await fetchAPIData(oEnvir.url+"/api/data/v9.2/bots?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse);
+    const aBots =await fetchAPIData(oEnvir.url+"/api/data/v9.2/bots?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aBots){
       aBots.value.forEach(bot =>{
         aAllData.push(
@@ -190,7 +218,7 @@ async function getData(oEnvir,bDestroy){
     }
     
     ///solutions
-    const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse);
+    const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aSolutions){    
       aSolutions.value.forEach(sol =>{   
         if(!sol.uniquename.includes("msdyn")){
@@ -201,7 +229,7 @@ async function getData(oEnvir,bDestroy){
     }
 
     ////connection refs
-    const aConnections =await fetchAPIData(oEnvir.url+"/api/data/v9.2/connectionreferences?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse);
+    const aConnections =await fetchAPIData(oEnvir.url+"/api/data/v9.2/connectionreferences?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aConnections){
       aConnections.value.forEach(con =>{
         aAllData.push(
@@ -226,7 +254,7 @@ async function getData(oEnvir,bDestroy){
     }   
     
      ////environment variables
-     const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse);
+     const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
      if(aVaraiables){
       aVaraiables.value.forEach(eva =>{
          aAllData.push(
@@ -256,6 +284,7 @@ async function getData(oEnvir,bDestroy){
   if(iAPICount==aEnvironmentsMaster.length){
     console.log(aAllData);
     eLoad.innerHTML="Key Data";
+    eDiv.style.display="none";
     loadCharts(aAllData,aEnvironmentsMaster,bDestroy);
     localStorage.setItem("data",JSON.stringify(aAllData));
     localStorage.setItem("environments",JSON.stringify(aEnvironmentsMaster));
@@ -265,7 +294,7 @@ async function getData(oEnvir,bDestroy){
 }
 
 async function getComponents(oEnvir,sol,sUser){
-  const aComponents =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_createdby_value eq '"+sUser+"' and _solutionid_value eq '"+sol.solutionid+"'",oDataAPI.dataverse);
+  const aComponents =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutioncomponents?$filter=_createdby_value eq '"+sUser+"' and _solutionid_value eq '"+sol.solutionid+"'",oDataAPI.dataverse,oEnvir.displayName);
   if(aComponents.value.length>0){
     aAllData.push(
       {
@@ -296,8 +325,8 @@ async function getComponents(oEnvir,sol,sUser){
 function downloadJSON(data,sFileName) {
 
   const jsonString = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonString], { type: 'application/json' });
-  const link = document.createElement('a');
+  const blob = new Blob([jsonString], { type: "application/json" });
+  const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = sFileName
   document.body.appendChild(link);
@@ -307,7 +336,7 @@ function downloadJSON(data,sFileName) {
 
 async function getEnvironments(sEnvirToken, sEnvirURL) {
   try {
-    const data = await fetchAPIData(sEnvirURL, sEnvirToken);
+    const data = await fetchAPIData(sEnvirURL, sEnvirToken,"");
 
     const aEnvironments = data.value
       .sort((a, b) => {
@@ -358,7 +387,7 @@ function variableType(iVar){
   }
 }
 
-async function fetchAPIData(url, token) {
+async function fetchAPIData(url, token,environment) {
   try {
     const options = {
       headers: {
@@ -368,10 +397,14 @@ async function fetchAPIData(url, token) {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      console.log(`HTTP error! status: ${response.status}`)
-      if (response.status === 401) {
-        console.error('Unauthorized: Invalid token or credentials');
-        eData.innerHTML+="<br><b style='color:red;'>Invalid token, refresh make.powerautomate.com page to update</b><br>"
+      console.log(url+" - HTTP error! status: "+response.status,url.includes("WhoAmI"),response.status == 401)
+      if (response.status == 401 && !url.includes("WhoAmI")) {
+        eData.innerHTML+="<br><b style='color:red;'>"+environment+"Invalid token, refresh make.powerautomate.com page to update</b><br>";
+        return null;
+      }
+      console.log(!response.status == 401 && url.includes("WhoAmI"),!response.status == 401 , url.includes("WhoAmI"))
+      if (!response.status == 401 && url.includes("WhoAmI")){
+        eData.innerHTML+="<br><b style='color:red;'>"+environment+"WhoAmI failed</b><br>";
         return null;
       }
     }
@@ -379,7 +412,7 @@ async function fetchAPIData(url, token) {
     const data = await response.json();
     return data;
  } catch (error) {
-   console.log('Error fetching API data:', error);
+   console.log("Error fetching API data:", error);
    return null
  }
 }
