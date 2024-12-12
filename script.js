@@ -4,6 +4,7 @@ let dDate = new Date(new Date().getFullYear()+"-01-01");
 let sDate= dDate.getFullYear()+"-01-01";
 let dDateTo = new Date(new Date().getFullYear()+"-12-31");
 let sDateTo= dDateTo.getFullYear()+"-12-31";
+let sFilter="";
 let bFirst=true;
 let oDataAPI;
 let aAllData=[];
@@ -12,6 +13,7 @@ let aEnvironmentsMaster=[]
 const eData=document.getElementById("data");
 const eDate=document.getElementById("input-date");
 const eDateTo=document.getElementById("input-dateTo");
+const eFilter=document.getElementById("input-filter");
 const eUpdate=document.getElementById("button-update");
 const eLoad=document.getElementById("sideTitle");
 const eTotal=document.getElementById("span-total");
@@ -29,17 +31,20 @@ eDate.value=sDate;
 eDateTo.value=sDateTo;
 
 document.addEventListener("DOMContentLoaded", () => {
+  if(localStorage.getItem("solutionFilter")){
+    eFilter.value=sFilter=localStorage.getItem("solutionFilter");
+  }
   chrome.runtime.sendMessage({ type: "REQUEST_DATA" }, (response) => {
     console.log(response)
     if (response) {
       if(response.dataverse!="" && response.flow!=""){
         oDataAPI=response;
+        eLoad.innerHTML="Data Loading..";
         load();      
       } else if(localStorage.getItem("data")){
-        aAllData=JSON.parse(localStorage.getItem("data"))
-        aEnvironmentsMaster=JSON.parse(localStorage.getItem("environments"))
-
-        loadCharts(aAllData,aEnvironmentsMaster,false)
+        aAllData=JSON.parse(localStorage.getItem("data"));
+        aEnvironmentsMaster=JSON.parse(localStorage.getItem("environments"));
+        loadCharts(aAllData,aEnvironmentsMaster,false);
         sDate = localStorage.getItem("date");
         sDateTo = localStorage.getItem("dateTo");
         eDate.value=sDate;
@@ -94,6 +99,7 @@ function setDate(){
    dDateTo= new Date(sDateTo);
    eData.innerHTML="";
    eLoad.innerHTML="Data Loading..";
+   eDiv.style.display=null;
    aAllData.length=0;
    iAPICount=0;
    console.log(aAllData)
@@ -116,10 +122,12 @@ async function getData(oEnvir,bDestroy){
   let oWhoAmI;
   let sURLuser;
   let oUser;
+  localStorage.setItem("solutionFilter",eFilter.value);
+  sFilter=eFilter.value;  
+  
   ////get user
   try{
-    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,oEnvir.displayName);
-    
+    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,oEnvir.displayName); 
   }catch(error) {
     oWhoAmI=null;
   }
@@ -128,9 +136,7 @@ async function getData(oEnvir,bDestroy){
     iAPICount++;
     eData.innerHTML+="<i class='fa-solid fa-globe' style='color:red' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" failed, id: cant find<br>";  
     }else{
-
-      if(bFirst){
-        
+      if(bFirst){        
         sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
         oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse);
         eData.innerHTML+="Hello "+oUser.fullname+"<br>";
@@ -164,7 +170,7 @@ async function getData(oEnvir,bDestroy){
           )
         }      
       })
-      eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>&nbsp;"+oEnvir.displayName+" flows found<br>";
+      eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>&nbsp;"+oEnvir.displayName+" flows found "+aFlows.value.length+"<br>";
     }
        
     ////apps
@@ -189,7 +195,7 @@ async function getData(oEnvir,bDestroy){
           }
         )
       })
-      eData.innerHTML+="<i class='fa-solid fa-laptop'></i>&nbsp;"+oEnvir.displayName+" apps found<br>";
+      eData.innerHTML+="<i class='fa-solid fa-laptop'></i>&nbsp;"+oEnvir.displayName+" apps found "+aApps.value.length+"<br>";
     }
     
     ////agents
@@ -214,7 +220,7 @@ async function getData(oEnvir,bDestroy){
           }
         )
       })
-      eData.innerHTML+="<i class='fa-solid fa-robot'></i>&nbsp;"+oEnvir.displayName+" copilot agents found<br>";
+      eData.innerHTML+="<i class='fa-solid fa-robot'></i>&nbsp;"+oEnvir.displayName+" copilot agents found "+aBots.value.length+"<br>";
     }
     
     ///solutions
@@ -225,7 +231,7 @@ async function getData(oEnvir,bDestroy){
           getComponents(oEnvir,sol,oWhoAmI.UserId)
         }       
       })      
-      eData.innerHTML+="<i class='fa-solid fa-box-open'></i>&nbsp;"+oEnvir.displayName+" solutions found<br>";
+      eData.innerHTML+="<i class='fa-solid fa-box-open'></i>&nbsp;"+oEnvir.displayName+" solutions found "+aSolutions.value.length+"<br>";
     }
 
     ////connection refs
@@ -250,7 +256,7 @@ async function getData(oEnvir,bDestroy){
           }
         )
       })
-      eData.innerHTML+="<i class='fa-solid fa-plug'></i>&nbsp;"+oEnvir.displayName+" connection references found<br>";
+      eData.innerHTML+="<i class='fa-solid fa-plug'></i>&nbsp;"+oEnvir.displayName+" connection references found "+aConnections.value.length+"<br>";
     }   
     
      ////environment variables
@@ -275,7 +281,7 @@ async function getData(oEnvir,bDestroy){
            }
          )
        })
-       eData.innerHTML+="<i class='fa-solid fa-database'></i>&nbsp;"+oEnvir.displayName+" environment variables found<br>";
+       eData.innerHTML+="<i class='fa-solid fa-database'></i>&nbsp;"+oEnvir.displayName+" environment variables found "+aVaraiables.value.length+"<br>";
      }
      iAPICount++;   
      eCount.innerText=iAPICount;   
@@ -359,10 +365,10 @@ async function getEnvironments(sEnvirToken, sEnvirURL) {
         };
       });
 
-    return aEnvironments; // Return the processed array
+    return aEnvironments; 
   } catch (error) {
     console.log("Error Get Environments:", error);
-    return []; // Return an empty array as a fallback
+    return []; 
   }
 }
 
@@ -387,7 +393,7 @@ function variableType(iVar){
   }
 }
 
-async function fetchAPIData(url, token,environment) {
+async function fetchAPIData(url, token, environment) {
   try {
     const options = {
       headers: {
@@ -408,7 +414,6 @@ async function fetchAPIData(url, token,environment) {
         return null;
       }
     }
-
     const data = await response.json();
     return data;
  } catch (error) {

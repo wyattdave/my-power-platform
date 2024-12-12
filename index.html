@@ -48,23 +48,28 @@
     <div class="col-sm-3 sidenav hidden-xs">
         <h2><img src="icon256.png" class="icon" /> My Power Platform</h2>
         <div class="form-group">
-            <label for="date">Range</label>
-            <input type="date" class="form-control" id="input-date" aria-describedby="Date From">
-            <small id="dateHelp" class="form-text text-muted">Select when you want the data from</small>
-            <input type="date" class="form-control" id="input-dateTo" aria-describedby="Date To">
-            <small id="dateToHelp" class="form-text text-muted">Select when you want the data to</small>
-            <br>
-            <table>
-              <tr>
-                <td><button id="button-update" type="button" class="btn btn-primary"><i class="fa-solid fa-arrows-rotate"></i>&nbsp;Update</button></td>
-                <td>&nbsp;<button id="button-data" type="button" class="btn btn-primary"><i class="fa-solid fa-download"></i>&nbsp;Data</button></td>
-                <td>&nbsp;<button id="button-envir" type="button" class="btn btn-primary"><i class="fa-solid fa-download"></i>&nbsp;Envir</button></td>
-                <td>&nbsp;<button id="button-csv" type="button" class="btn btn-primary"><i class="fa-solid fa-download"></i>&nbsp;CSV</button></td>
-                <td><div id="div-count">&nbsp;&nbsp;<span id ="span-count">0</span>&nbsp;of&nbsp;<span id ="span-total">0</span></div></td>
-              </tr>
-            </table>
-          </div>
-        <label for="load" id="sideTitle">Data Loading..</label>
+          <input type="date" class="form-control" id="input-date" aria-describedby="Date From">
+          <small id="dateHelp" class="form-text text-muted">Select when you want the data from</small>
+          <input type="date" class="form-control" id="input-dateTo" aria-describedby="Date To">
+          <small id="dateToHelp" class="form-text text-muted">Select when you want the data to</small>
+          <input type="text" class="form-control" id="input-filter" style="display:none" aria-describedby="Filter" placeholder="Solution name includes">
+          <small id="filterHelp" class="form-text text-muted" style="display:none">Filter solutions</small>
+          <br>
+          <table>
+            <tr>
+              <td><button id="button-update" type="button" class="btn btn-primary"><i class="fa-solid fa-arrows-rotate"></i>&nbsp;Update</button></td>
+              <td>&nbsp;<button id="button-data" type="button" class="btn btn-primary"><i class="fa-solid fa-download"></i>&nbsp;Data</button></td>
+              <td>&nbsp;<button id="button-envir" type="button" class="btn btn-primary"><i class="fa-solid fa-download"></i>&nbsp;Envir</button></td>
+              <td>&nbsp;<button id="button-csv" type="button" class="btn btn-primary"><i class="fa-solid fa-download"></i>&nbsp;CSV</button></td>
+            </tr>
+          </table>
+        </div>
+        <table>
+          <tr>
+            <td><label for="load" id="sideTitle">Data Loading..</label></td>
+            <td><div id="div-count">&nbsp;&nbsp;<span id ="span-count">0</span>&nbsp;of&nbsp;<span id ="span-total">0</span></div></td>
+          </tr>
+        </table>        
         <div id="data" style="max-height:60vh; overflow-y: auto;"></div>
         <br>
         <label class="footer"><a href="https://powerdevbox.com/devto.html" target="_blank"><img src="assets/img/wyattdave.png" style="height:20px;padding-right:10px"/>&nbsp;dev.to blog about extension</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://powerdevbox.com" target="_blank"><img src="assets/img/power devbox black.png" style="height:20px;padding-right:10px"/></a></label>

@@ -5,7 +5,7 @@ let connectionChart;
 let componentChart;
 
 function loadCharts(aData,aEnvironments,bDestroy){
-     if(bDestroy){
+    if(bDestroy){
         destroyCharts()
     }
     let aEnvironmentData=[];
@@ -24,6 +24,14 @@ function loadCharts(aData,aEnvironments,bDestroy){
         })
     })
    
+/*    if(eFilter.value==""){
+        console.log("No solution filter")
+    }else{        
+        aData=aData.filter(item =>{
+            return item.type!="solution" || !item.displayName.includes(eFilter.value)
+        });
+    }
+*/
 
     ///timeline
     let oTimelineFlow=[];  
@@ -120,14 +128,13 @@ function loadCharts(aData,aEnvironments,bDestroy){
     };
 
     timeLineChart= new Chart(document.getElementById("timelineChart").getContext("2d"), config);
-
     
     ////solution
     aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
     });
-
     const aLastSolutions=structuredClone(aEnvironmentSolutions);
+    
     aLabels.length=0;  
     for(i=0;i<4;i++){
         aLabels.push(aEnvironmentData[i].displayName)
@@ -164,10 +171,8 @@ function loadCharts(aData,aEnvironments,bDestroy){
             maintainAspectRatio: true
         }
     };
-    solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);
-        
+    solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);   
    
-
     ////environment variable
     aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
