@@ -50,12 +50,12 @@ document.addEventListener("DOMContentLoaded", () => {
         eDate.value=sDate;
         eDateTo.value=sDateTo;
         eLoad.innerHTML="Key Data Reloaded";
-        alert("Access expired, reloaded previous data, if new update required please got to make.powerautomate.com or refresh the page");
+        alert("Access expired, reloaded previous data, if new update required please got to https:/make.powerautomate.com or refresh the page");
       }else{
-        alert("Access expired, please got to make.powerautomate.com or refresh the page");
+        alert("Access expired, please go to https://make.powerautomate.com or refresh the page");
       }      
     } else {
-      console.error("Failed to receive data from the background script.");
+      console.error("Failed to receive data");
     }
   });
 });
@@ -334,7 +334,7 @@ function downloadJSON(data,sFileName) {
   const blob = new Blob([jsonString], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = sFileName
+  link.download = sFileName;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -354,7 +354,7 @@ async function getEnvironments(sEnvirToken, sEnvirURL) {
         let sUrl = "";
         if (item.properties.hasOwnProperty("linkedEnvironmentMetadata")) {
           sUrl = item.properties.linkedEnvironmentMetadata.instanceUrl;
-          sUrlAPI= item.properties.linkedEnvironmentMetadata.instanceApiUrl
+          sUrlAPI= item.properties.linkedEnvironmentMetadata.instanceApiUrl;
         }
 
         return {
