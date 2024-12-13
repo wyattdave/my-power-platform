@@ -1,13 +1,12 @@
+/*By David wyatt, https://www.linkedin.com/in/wyattdave/ , under license: https://github.com/wyattdave/my-power-platform/blob/main/LICENSE*/
 let timeLineChart;
 let solutionChart;
 let variableChart;
 let connectionChart;
 let componentChart;
 
-function loadCharts(aData,aEnvironments,bDestroy){
-    if(bDestroy){
-        destroyCharts()
-    }
+function loadCharts(aData,aEnvironments,bRefresh){
+
     let aEnvironmentData=[];
     aEnvironments.forEach(envir =>{
         const aThisEnvironment=aData.filter(item => {return item.environment.id==envir.id});
@@ -24,7 +23,8 @@ function loadCharts(aData,aEnvironments,bDestroy){
         })
     })
    
-/*    if(eFilter.value==""){
+/*  plan was to remove your default solution as is always top, but it caused issues just for small use case so left off for now    
+if(eFilter.value==""){
         console.log("No solution filter")
     }else{        
         aData=aData.filter(item =>{
@@ -126,23 +126,27 @@ function loadCharts(aData,aEnvironments,bDestroy){
             }
         }
     };
+  
+    if(bRefresh){
+        addData(timeLineChart, aLabels, data.datasets)
+    }else{
+        timeLineChart= new Chart(document.getElementById("timelineChart").getContext("2d"), config);
+    }
 
-    timeLineChart= new Chart(document.getElementById("timelineChart").getContext("2d"), config);
-    
     ////solution
     aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
     });
     const aLastSolutions=structuredClone(aEnvironmentSolutions);
     
-    aLabels.length=0;  
+    let aLabelsSol=[];  
     for(i=0;i<4;i++){
-        aLabels.push(aEnvironmentData[i].displayName)
+        aLabelsSol.push(aEnvironmentData[i].displayName)
     }
-    if(aLabels.length>3){ aLabels.push("All Others")}
+    if(aLabelsSol.length>3){ aLabelsSol.push("All Others")}
 
     data = {
-        labels: aLabels,
+        labels: aLabelsSol,
         datasets: [{
           label: "Solutions",
           data: [
@@ -171,17 +175,21 @@ function loadCharts(aData,aEnvironments,bDestroy){
             maintainAspectRatio: true
         }
     };
-    solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);   
-   
+    if(bRefresh){
+        addData(solutionChart, aLabelsSol, data.datasets)
+    }else{
+        solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);   
+    }
+
     ////environment variable
     aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
     });
 
-    aLabels =["String","Number","Boolean","JSON","Data Source","Secret"]
+    const aLabelsVar =["String","Number","Boolean","JSON","Data Source","Secret"]
 
     data = {
-        labels: aLabels,
+        labels: aLabelsVar,
         datasets: [{
         label: "Environment Variables",
         data: [
@@ -212,17 +220,21 @@ function loadCharts(aData,aEnvironments,bDestroy){
             maintainAspectRatio: true
         }
     };
-    variableChart= new Chart(document.getElementById("variableChart").getContext("2d"), config);
+    if(bRefresh){
+        addData(variableChart, aLabelsVar, data.datasets)
+    }else{
+        variableChart= new Chart(document.getElementById("variableChart").getContext("2d"), config);
+    }
 
     ////connection references
     aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
         return b.components - a.components;
     });
 
-    aLabels =["SharePoint","Dataverse","Outlook 365","Forms","Users 365","Teams","Power BI","Excel Business","OneDrive Business","Approvals","Others"]
+    const aLabelsCon =["SharePoint","Dataverse","Outlook 365","Forms","Users 365","Teams","Power BI","Excel Business","OneDrive Business","Approvals","Others"]
 
     data = {
-        labels: aLabels,
+        labels: aLabelsCon,
         datasets: [{
         label: "Connection References",
         data: [
@@ -261,16 +273,21 @@ function loadCharts(aData,aEnvironments,bDestroy){
         data: data,
         options: {
             responsive: true,
-            maintainAspectRatio: true
+            maintainAspectRatio: true,
+            animation: false
         }
     };
-    connectionChart= new Chart(document.getElementById("connectionChart").getContext("2d"), config);
+    if(bRefresh){
+        addData(connectionChart, aLabelsCon, data.datasets)
+    }else{
+        connectionChart= new Chart(document.getElementById("connectionChart").getContext("2d"), config);
+    }
 
-/   ///componets
-    aLabels =["Flows","Apps","Agents","Solutions"];
+/   ///components
+    const aLabelsComp =["Flows","Apps","Agents","Solutions"];
 
     data = {
-        labels: aLabels,
+        labels: aLabelsComp,
         datasets: [{
         label: "Component",
         data: [
@@ -317,7 +334,11 @@ function loadCharts(aData,aEnvironments,bDestroy){
             }
         }
     };
-    componentChart= new Chart(document.getElementById("componentChart").getContext("2d"), config);
+    if(bRefresh){
+        addData(componentChart, aLabelsComp, data.datasets)
+    }else{
+        componentChart= new Chart(document.getElementById("componentChart").getContext("2d"), config);
+    }
     blurbage(aData,aEnvironmentData)
 
 }
@@ -375,12 +396,12 @@ function blurbage(aData,aEnvironmentData){
     }    
 
     sHtml+="<b>"+aEnvironmentData.length+"</b> Environments, <b>"+aEnvironmentData.filter(env =>{return env.components>0}).length+"</b> used<br>";
-    sHtml+="<b>Totals</b><br>Flows: <b>"+aData.filter(item =>{return item.type=="flow"}).length+"</b>, top trigger is <b>"+sTopTrigger+"</b><br>";
+    sHtml+="<br><b>Totals</b><br>Flows: <b>"+aData.filter(item =>{return item.type=="flow"}).length+"</b>, top trigger is <b>"+sTopTrigger+"</b><br>";
     sHtml+="Apps: <b>"+aData.filter(item =>{return item.type=="app"}).length+"</b><br>";
     sHtml+="Agents: <b>"+aData.filter(item =>{return item.type=="agent"}).length+"</b><br>";
     sHtml+="Connection Refs: <b>"+aData.filter(item =>{return item.type=="connection reference"}).length+"</b><br>";
     sHtml+="Env Variables: <b>"+aData.filter(item =>{return item.type=="environment variable"}).length+"</b><br>";
-    sHtml+="<b>Solutions</b><br><b>"+aSolutions.length+"</b> total solutions<br>";
+    sHtml+="<br><b>Solutions</b><br><b>"+aSolutions.length+"</b> total solutions<br>";
     sHtml+="Solution with most components is <b>"+aSolutions[0].displayName+"</b> with <b>"+aSolutions[0].contents.components+"</b> components. Average size is <b>"+Math.floor(aSolutions.reduce((a, b) => a + b.contents.components, 0) / aSolutions.length)+"</b><br>";
     sHtml+="With the most flows is <b>"+sSolutionFlows.displayName+"</b> with <b>"+sSolutionFlows.count+"</b><br>";
     eData.innerHTML=sHtml;
@@ -400,4 +421,27 @@ function destroyCharts(){
     variableChart.destroy();
     connectionChart.destroy();
     componentChart.destroy();
+
+    timeLineChart=null;
+}
+
+
+function addData(chart, aLabel, aNewData) {
+    chart.data.labels.length=0;
+    chart.data.datasets.length=0;
+    chart.data.labels=aLabel;
+    aNewData.forEach((item) => {
+        chart.data.datasets.push(item);
+    });
+    chart.update();
+}
+
+function removeData(chart) {
+    chart.data.labels.pop();
+    chart.data.datasets.forEach((dataset) => {
+        dataset.data.pop();
+    });
+    console.log( chart.data.labels)
+    chart.update();
+
 }

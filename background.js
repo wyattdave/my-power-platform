@@ -1,3 +1,4 @@
+/*By David wyatt, https://www.linkedin.com/in/wyattdave/ , under license: https://github.com/wyattdave/my-power-platform/blob/main/LICENSE*/
 let sFlowAPI="";
 let sDataAPI="";
 let sAppAPI="";
@@ -6,12 +7,12 @@ let sEnvironment="";
 let sEnvironmentsUrl="";
 let bEnvir=false;
 
-let sApiUrlFlowEnvir="https://us.api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments?$expand=properties%2Fpermissions&api-version=2016-11-01";
+let sApiUrlFlowEnvir="https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments?$expand=properties%2Fpermissions&api-version=2016-11-01";
 let sApiUrlFlow = 'https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/';
 let sApiUrlApp="https://<tenantID>.tenant.api.powerplatform.com/powerapps/environments?api-version=1";
 ///https://emea.api.flow.microsoft.com/providers/Microsoft.ProcessSimple
 ///https://unitedkingdom.api.flow.microsoft.com/providers/Microsoft.ProcessSimple
-///https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple
+///https://us.api.flow.microsoft.com/providers/Microsoft.ProcessSimple
 
   chrome.action.onClicked.addListener((tab) => {
     (async () => {

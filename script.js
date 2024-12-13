@@ -1,3 +1,4 @@
+/*By David wyatt, https://www.linkedin.com/in/wyattdave/ , under license: https://github.com/wyattdave/my-power-platform/blob/main/LICENSE*/
 let sApiUrlFlow = 'https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/';
 let sApiUrlApp="https://<tenantID>.tenant.api.powerplatform.com/powerapps/environments?api-version=1";
 let dDate = new Date(new Date().getFullYear()+"-01-01");
@@ -102,7 +103,8 @@ function setDate(){
    eDiv.style.display=null;
    aAllData.length=0;
    iAPICount=0;
-   console.log(aAllData)
+   eCount.innerText=0;   
+   console.log(aAllData);
    aEnvironmentsMaster.forEach(envir =>{    
     getData(envir,true)
   })
@@ -172,7 +174,7 @@ async function getData(oEnvir,bDestroy){
       })
       eData.innerHTML+="<i class='fa-solid fa-puzzle-piece'></i>&nbsp;"+oEnvir.displayName+" flows found "+aFlows.value.length+"<br>";
     }
-       
+      
     ////apps
     const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdtime ge "+sDate+" and createdtime le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aApps){
@@ -259,32 +261,32 @@ async function getData(oEnvir,bDestroy){
       eData.innerHTML+="<i class='fa-solid fa-plug'></i>&nbsp;"+oEnvir.displayName+" connection references found "+aConnections.value.length+"<br>";
     }   
     
-     ////environment variables
-     const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
-     if(aVaraiables){
+    ////environment variables
+    const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
+    if(aVaraiables){
       aVaraiables.value.forEach(eva =>{
-         aAllData.push(
-           {
-             type:"environment variable",
-             environment:{
-               displayName:oEnvir.displayName,
-               id:oEnvir.id,
-               url:oEnvir.dyn
-             },
-             id:eva.schemaname,
-             dataverseId:eva.environmentvariabledefinitionid,
-             displayName:eva.displayname,
-             createdTime:eva.createdon,
-             isManaged:eva.ismanaged,
-             variableType:variableType(eva.type),
-             month:new Date(eva.createdon).getMonth()+1
-           }
-         )
-       })
-       eData.innerHTML+="<i class='fa-solid fa-database'></i>&nbsp;"+oEnvir.displayName+" environment variables found "+aVaraiables.value.length+"<br>";
-     }
-     iAPICount++;   
-     eCount.innerText=iAPICount;   
+        aAllData.push(
+          {
+            type:"environment variable",
+            environment:{
+              displayName:oEnvir.displayName,
+              id:oEnvir.id,
+              url:oEnvir.dyn
+            },
+            id:eva.schemaname,
+            dataverseId:eva.environmentvariabledefinitionid,
+            displayName:eva.displayname,
+            createdTime:eva.createdon,
+            isManaged:eva.ismanaged,
+            variableType:variableType(eva.type),
+            month:new Date(eva.createdon).getMonth()+1
+          }
+        )
+      })
+      eData.innerHTML+="<i class='fa-solid fa-database'></i>&nbsp;"+oEnvir.displayName+" environment variables found "+aVaraiables.value.length+"<br>";
+    }
+    iAPICount++;   
+    eCount.innerText=iAPICount;   
   }  
 
   if(iAPICount==aEnvironmentsMaster.length){
@@ -297,6 +299,7 @@ async function getData(oEnvir,bDestroy){
     localStorage.setItem("date",sDate);
     localStorage.setItem("dateTo",sDateTo);
   }
+  
 }
 
 async function getComponents(oEnvir,sol,sUser){
@@ -372,6 +375,8 @@ async function getEnvironments(sEnvirToken, sEnvirURL) {
   }
 }
 
+
+
 function variableType(iVar){
   if(iVar==100000000){
     return "String"
@@ -403,14 +408,12 @@ async function fetchAPIData(url, token, environment) {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      console.log(url+" - HTTP error! status: "+response.status,url.includes("WhoAmI"),response.status == 401)
       if (response.status == 401 && !url.includes("WhoAmI")) {
-        eData.innerHTML+="<br><b style='color:red;'>"+environment+"Invalid token, refresh make.powerautomate.com page to update</b><br>";
+        eData.innerHTML+="<br><b style='color:red;'>"+environment+" Invalid token, refresh https://make.powerautomate.com page to update</b><br>";
         return null;
       }
-      console.log(!response.status == 401 && url.includes("WhoAmI"),!response.status == 401 , url.includes("WhoAmI"))
       if (!response.status == 401 && url.includes("WhoAmI")){
-        eData.innerHTML+="<br><b style='color:red;'>"+environment+"WhoAmI failed</b><br>";
+        eData.innerHTML+="<br><b style='color:red;'>"+environment+" WhoAmI failed</b><br>";
         return null;
       }
     }
