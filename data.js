@@ -56,7 +56,7 @@ if(eFilter.value==""){
     let aLabels = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const iMinMonth= aTimline.reduce((min, item) => Math.min(min, item.month), Infinity);
     const iMaxMonth= aTimline.reduce((max, item) => Math.max(max, item.month), -Infinity);
-    aLabels=aLabels.slice(iMinMonth,iMaxMonth);
+   // aLabels=aLabels.slice(iMinMonth-1,iMaxMonth+1);
 
     let data = {
         labels: aLabels, 
@@ -141,9 +141,14 @@ if(eFilter.value==""){
     
     let aLabelsSol=[];  
     for(i=0;i<4;i++){
-        aLabelsSol.push(aEnvironmentData[i].displayName)
+        if(aEnvironmentData[i]){
+            aLabelsSol.push(aEnvironmentData[i].displayName)
+        }else{
+            aLabelsSol.push("not enough solutions "+i);
+            aEnvironmentSolutions.push("not enough solutions "+i);
+        }    
     }
-    if(aLabelsSol.length>3){ aLabelsSol.push("All Others")}
+   aLabelsSol.push("All Others")
 
     data = {
         labels: aLabelsSol,

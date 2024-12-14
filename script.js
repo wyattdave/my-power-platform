@@ -138,16 +138,15 @@ async function getData(oEnvir,bDestroy){
     iAPICount++;
     eData.innerHTML+="<i class='fa-solid fa-globe' style='color:red' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" failed, id: cant find<br>";  
     }else{
-      if(bFirst){        
+      if(bFirst){   
+        bFirst=false;     
         sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
         oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse);
-        eData.innerHTML+="Hello "+oUser.fullname+"<br>";
-        bFirst=false;
+        eData.innerHTML+="Hello "+oUser.fullname+"<br>";        
       }
-
       eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
     
-      ////flows   
+    ////flows   
     const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow,oEnvir.displayName )
     if(aFlows){
       aFlows.value.forEach(flow =>{
