@@ -7,21 +7,7 @@ let componentChart;
 
 function loadCharts(aData,aEnvironments,bRefresh){
 
-    let aEnvironmentData=[];
-    aEnvironments.forEach(envir =>{
-        const aThisEnvironment=aData.filter(item => {return item.environment.id==envir.id});
-        aEnvironmentData.push({
-            displayName:envir.displayName,
-            id:envir.id,
-            flows: aThisEnvironment.filter(item =>{return item.type=="flow"}).length,
-            apps: aThisEnvironment.filter(item =>{return item.type=="app"}).length,
-            agents: aThisEnvironment.filter(item =>{return item.type=="agent"}).length,
-            solutions: aThisEnvironment.filter(item =>{return item.type=="solution"}).length,
-            connectionReferences: aThisEnvironment.filter(item =>{return item.type=="connectionReferences"}).length,
-            environmentVariables: aThisEnvironment.filter(item =>{return item.type=="environmentVariable"}).length,
-            components:aThisEnvironment.length
-        })
-    })
+ 
    
 /*  plan was to remove your default solution as is always top, but it caused issues just for small use case so left off for now    
 if(eFilter.value==""){
@@ -54,9 +40,11 @@ if(eFilter.value==""){
     });
 
     let aLabels = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const iMinMonth= aTimline.reduce((min, item) => Math.min(min, item.month), Infinity);
+    /* Make chart remove unused months before and after - caused bugs so removed
+    onst iMinMonth= aTimline.reduce((min, item) => Math.min(min, item.month), Infinity);
     const iMaxMonth= aTimline.reduce((max, item) => Math.max(max, item.month), -Infinity);
-   // aLabels=aLabels.slice(iMinMonth-1,iMaxMonth+1);
+    aLabels=aLabels.slice(iMinMonth-1,iMaxMonth+1);
+    */
 
     let data = {
         labels: aLabels, 
@@ -109,6 +97,11 @@ if(eFilter.value==""){
                     position: "top" 
                 }
             },
+            layout: {
+                padding: {
+                    right: 40
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true, 
@@ -133,61 +126,10 @@ if(eFilter.value==""){
         timeLineChart= new Chart(document.getElementById("timelineChart").getContext("2d"), config);
     }
 
-    ////solution
-    aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
-        return b.components - a.components;
-    });
-    const aLastSolutions=structuredClone(aEnvironmentSolutions);
-    
-    let aLabelsSol=[];  
-    for(i=0;i<4;i++){
-        if(aEnvironmentData[i]){
-            aLabelsSol.push(aEnvironmentData[i].displayName)
-        }else{
-            aLabelsSol.push("not enough solutions "+i);
-            aEnvironmentSolutions.push("not enough solutions "+i);
-        }    
-    }
-   aLabelsSol.push("All Others")
 
-    data = {
-        labels: aLabelsSol,
-        datasets: [{
-          label: "Solutions",
-          data: [
-            aEnvironmentSolutions[0].solutions, 
-            aEnvironmentSolutions[1].solutions, 
-            aEnvironmentSolutions[2].solutions,
-            aEnvironmentSolutions[3].solutions,
-            aLastSolutions.splice(0,4).length
-          ],
-          backgroundColor: [
-            "rgb(66, 135, 246)",
-            "rgb(216, 46, 46)",
-            "rgb(226, 226, 56)",
-            "rgb(46, 196, 56)",
-            "rgb(176, 56, 196)"
-          ],
-          hoverOffset: 4
-        }]
-    };
-
-    config = {
-        type: "doughnut",
-        data: data,
-        options: {
-            responsive: true,
-            maintainAspectRatio: true
-        }
-    };
-    if(bRefresh){
-        addData(solutionChart, aLabelsSol, data.datasets)
-    }else{
-        solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);   
-    }
 
     ////environment variable
-    aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
+    aEnvironmentSolutions=aEnvironments.sort((a, b) => {
         return b.components - a.components;
     });
 
@@ -232,7 +174,7 @@ if(eFilter.value==""){
     }
 
     ////connection references
-    aEnvironmentSolutions=aEnvironmentData.sort((a, b) => {
+    aEnvironmentSolutions=aEnvironments.sort((a, b) => {
         return b.components - a.components;
     });
 
@@ -344,11 +286,64 @@ if(eFilter.value==""){
     }else{
         componentChart= new Chart(document.getElementById("componentChart").getContext("2d"), config);
     }
-    blurbage(aData,aEnvironmentData)
+
+    ////solution
+    aEnvironmentSolutions=aEnvironments.sort((a, b) => {
+        return b.components - a.components;
+    });
+    const aLastSolutions=structuredClone(aEnvironmentSolutions);
+    
+    let aLabelsSol=[]; 
+    let aSolutionData=[]; 
+    for(i=0;i<4;i++){
+        if(aEnvironments[i]){
+            aLabelsSol.push(aEnvironments[i].displayName);
+            aSolutionData.push(aEnvironmentSolutions[i].solutions);
+        }else{
+            aLabelsSol.push("not enough solutions "+i);
+            aSolutionData.push("not enough solutions "+i);
+        }    
+    }
+    if(aEnvironments.length>3){
+        aLabelsSol.push("All Others");
+        aSolutionData.push(aLastSolutions.splice(0,4).length);
+    }
+   
+    data = {
+        labels: aLabelsSol,
+        datasets: [{
+          label: "Solutions",
+          data: aSolutionData,
+          backgroundColor: [
+            "rgb(66, 135, 246)",
+            "rgb(216, 46, 46)",
+            "rgb(226, 226, 56)",
+            "rgb(46, 196, 56)",
+            "rgb(176, 56, 196)"
+          ],
+          hoverOffset: 4
+        }]
+    };
+
+    config = {
+        type: "doughnut",
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    };
+    if(bRefresh){
+        addData(solutionChart, aLabelsSol, data.datasets)
+    }else{
+        solutionChart= new Chart(document.getElementById("solutionChart").getContext("2d"), config);   
+    }
+
+    blurbage(aData,aEnvironments)
 
 }
 
-function blurbage(aData,aEnvironmentData){
+function blurbage(aData,aEnvironments){
     let sHtml="";
     let aSolutions=[];
    
@@ -400,7 +395,7 @@ function blurbage(aData,aEnvironmentData){
         sHtml+="<img src='assets/img/agent.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Agent Smith<br>"
     }    
 
-    sHtml+="<b>"+aEnvironmentData.length+"</b> Environments, <b>"+aEnvironmentData.filter(env =>{return env.components>0}).length+"</b> used<br>";
+    sHtml+="<b>"+aEnvironments.length+"</b> Environments, <b>"+aEnvironments.filter(env =>{return env.components>0}).length+"</b> used<br>";
     sHtml+="<br><b>Totals</b><br>Flows: <b>"+aData.filter(item =>{return item.type=="flow"}).length+"</b>, top trigger is <b>"+sTopTrigger+"</b><br>";
     sHtml+="Apps: <b>"+aData.filter(item =>{return item.type=="app"}).length+"</b><br>";
     sHtml+="Agents: <b>"+aData.filter(item =>{return item.type=="agent"}).length+"</b><br>";

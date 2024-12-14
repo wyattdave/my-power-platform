@@ -10,7 +10,8 @@ let bFirst=true;
 let oDataAPI;
 let aAllData=[];
 let iAPICount=0;
-let aEnvironmentsMaster=[]
+let aEnvironmentsMaster=[];
+let aEnvironmentData=[];
 const eData=document.getElementById("data");
 const eDate=document.getElementById("input-date");
 const eDateTo=document.getElementById("input-dateTo");
@@ -50,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sDateTo = localStorage.getItem("dateTo");
         eDate.value=sDate;
         eDateTo.value=sDateTo;
+        eDiv.style.display="none";
         eLoad.innerHTML="Key Data Reloaded";
         alert("Access expired, reloaded previous data, if new update required please got to https:/make.powerautomate.com or refresh the page");
       }else{
@@ -66,7 +68,7 @@ function downloadData(){
 }
 
 function downloadEnvironment(){
-  downloadJSON(aEnvironmentsMaster,"MyEnvironments ("+sDate+" to "+sDateTo+").json");
+  downloadJSON(aEnvironmentData,"MyEnvironments ("+sDate+" to "+sDateTo+").json");
 }
 
 function downloadCsv(){
@@ -292,7 +294,22 @@ async function getData(oEnvir,bDestroy){
     console.log(aAllData);
     eLoad.innerHTML="Key Data";
     eDiv.style.display="none";
-    loadCharts(aAllData,aEnvironmentsMaster,bDestroy);
+    aEnvironmentData;
+    aEnvironmentsMaster.forEach(envir =>{
+        const aThisEnvironment=aAllData.filter(item => {return item.environment.id==envir.id});
+        aEnvironmentData.push({
+            displayName:envir.displayName,
+            id:envir.id,
+            flows: aThisEnvironment.filter(item =>{return item.type=="flow"}).length,
+            apps: aThisEnvironment.filter(item =>{return item.type=="app"}).length,
+            agents: aThisEnvironment.filter(item =>{return item.type=="agent"}).length,
+            solutions: aThisEnvironment.filter(item =>{return item.type=="solution"}).length,
+            connectionReferences: aThisEnvironment.filter(item =>{return item.type=="connectionReferences"}).length,
+            environmentVariables: aThisEnvironment.filter(item =>{return item.type=="environmentVariable"}).length,
+            components:aThisEnvironment.length
+        })
+    })
+    loadCharts(aAllData,aEnvironmentData,bDestroy);
     localStorage.setItem("data",JSON.stringify(aAllData));
     localStorage.setItem("environments",JSON.stringify(aEnvironmentsMaster));
     localStorage.setItem("date",sDate);
