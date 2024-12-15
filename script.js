@@ -294,7 +294,7 @@ async function getData(oEnvir,bDestroy){
     console.log(aAllData);
     eLoad.innerHTML="Key Data";
     eDiv.style.display="none";
-    aEnvironmentData;
+    aEnvironmentData.length=0;
     aEnvironmentsMaster.forEach(envir =>{
         const aThisEnvironment=aAllData.filter(item => {return item.environment.id==envir.id});
         aEnvironmentData.push({

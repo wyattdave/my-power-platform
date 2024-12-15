@@ -296,15 +296,12 @@ if(eFilter.value==""){
     let aLabelsSol=[]; 
     let aSolutionData=[]; 
     for(i=0;i<4;i++){
-        if(aEnvironments[i]){
-            aLabelsSol.push(aEnvironments[i].displayName);
+        if(aEnvironmentSolutions[i]){
+            aLabelsSol.push(aEnvironmentSolutions[i].displayName);
             aSolutionData.push(aEnvironmentSolutions[i].solutions);
-        }else{
-            aLabelsSol.push("not enough solutions "+i);
-            aSolutionData.push("not enough solutions "+i);
-        }    
+        }   
     }
-    if(aEnvironments.length>3){
+    if(aEnvironmentSolutions.length>3){
         aLabelsSol.push("All Others");
         aSolutionData.push(aLastSolutions.splice(0,4).length);
     }
