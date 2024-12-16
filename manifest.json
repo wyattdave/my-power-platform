@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "My Power Platform",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "My Year on the Power Platform",
   "homepage_url":"https://powerdevbox.com/",
   "icons": { 

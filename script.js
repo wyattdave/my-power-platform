@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.runtime.sendMessage({ type: "REQUEST_DATA" }, (response) => {
     console.log(response)
     if (response) {
-      if(response.dataverse!="" && response.flow!=""){
+      if(response.dataverse!="" && response.flow!=""  && response.user!=""){
         oDataAPI=response;
         eLoad.innerHTML="Data Loading..";
         load();      
