@@ -3,16 +3,15 @@ let sFlowAPI="";
 let sDataAPI="";
 let sAppAPI="";
 let sEnvirAPI="";
+let sUserUrl="";
 let sEnvironment="";
 let sEnvironmentsUrl="";
 let bEnvir=false;
 
 let sApiUrlFlowEnvir="https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments?$expand=properties%2Fpermissions&api-version=2016-11-01";
-let sApiUrlFlow = 'https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/';
+let sApiUrlFlow = "https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/";
 let sApiUrlApp="https://<tenantID>.tenant.api.powerplatform.com/powerapps/environments?api-version=1";
-///https://emea.api.flow.microsoft.com/providers/Microsoft.ProcessSimple
-///https://unitedkingdom.api.flow.microsoft.com/providers/Microsoft.ProcessSimple
-///https://us.api.flow.microsoft.com/providers/Microsoft.ProcessSimple
+const rGuid=new RegExp("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", "i");
 
   chrome.action.onClicked.addListener((tab) => {
     (async () => {
@@ -31,22 +30,23 @@ let sApiUrlApp="https://<tenantID>.tenant.api.powerplatform.com/powerapps/enviro
           "flow":sFlowAPI,
           "app":sAppAPI,
           "envirs":sEnvirAPI,
-          "url":sEnvironmentsUrl
+          "url":sEnvironmentsUrl,
+          "user":sUserUrl
         }
         sendResponse(oTokens);
     }
   )
 
 chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
-  const bData=details.url.includes('.dynamics.com/api/data/v9.');
-  const bFlow=details.url.includes('.api.flow.microsoft.com/')&&!details.url.includes('scopes/admin/');
-  const bApp=details.url.includes('environment.api.powerplatform.com');
-  const bTenant=details.url.includes('.tenant.api.powerplatform.com/');
+  const bData=details.url.includes(".dynamics.com/api/data/v9.");
+  const bFlow=details.url.includes(".api.flow.microsoft.com/")&&!details.url.includes("scopes/admin/");
+  const bApp=details.url.includes("environment.api.powerplatform.com");
+  const bTenant=details.url.includes(".tenant.api.powerplatform.com/");
   if (bFlow||bData||bApp||bTenant) {
     for(var i = 0; i < details.requestHeaders.length;i++) {
       if(details.requestHeaders[i].name.toLowerCase() == "authorization"){
         if(bFlow){
-          sFlowAPI=details.requestHeaders[i].value
+          sFlowAPI=details.requestHeaders[i].value;
           if(!bEnvir){
             bEnvir=true;
             sEnvirAPI=sFlowAPI;
@@ -55,10 +55,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
           
         }
         if(bData){
-          sDataAPI=details.requestHeaders[i].value    
+          sDataAPI=details.requestHeaders[i].value;           
         }
         if(bApp){
-          sAppAPI=details.requestHeaders[i].value   
+          sAppAPI=details.requestHeaders[i].value;  
         }
         if(bTenant){
           const sEnvironment=details.url.split(".tenant.api")[0].split("https://")[1];
@@ -68,7 +68,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
             sEnvironmentsUrl=sApiUrlApp.replace("<tenantID>",sEnvironment);
           }  
           
-        }       
+        }   
+        if(details.url.includes("api/data/v9.2/systemusers(")){
+          sUserUrl=details.url.split("/Microsoft.Dynamics")[0]
+        }     
       }
     }
   }

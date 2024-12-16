@@ -12,6 +12,7 @@ let aAllData=[];
 let iAPICount=0;
 let aEnvironmentsMaster=[];
 let aEnvironmentData=[];
+let oUser;
 const eData=document.getElementById("data");
 const eDate=document.getElementById("input-date");
 const eDateTo=document.getElementById("input-dateTo");
@@ -117,6 +118,8 @@ async function load(){
   aEnvironmentsMaster=await getEnvironments(oDataAPI.envirs,oDataAPI.url,"")
   console.log(aEnvironmentsMaster)
   eTotal.innerText=aEnvironmentsMaster.length;
+  oUser =await fetchAPIData(oDataAPI.user,oDataAPI.dataverse,"");
+  eData.innerHTML="Hello "+oUser.fullname+"<br>"; 
   aEnvironmentsMaster.forEach(envir =>{    
     getData(envir,false)
   })  
@@ -124,29 +127,21 @@ async function load(){
 
 async function getData(oEnvir,bDestroy){
   let oWhoAmI;
-  let sURLuser;
-  let oUser;
   localStorage.setItem("solutionFilter",eFilter.value);
   sFilter=eFilter.value;  
-  
-  ////get user
-  try{
-    oWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/WhoAmI", oDataAPI.dataverse,oEnvir.displayName); 
-  }catch(error) {
+
+
+  const aWhoAmI=await fetchAPIData(oEnvir.url+"/api/data/v9.2/systemusers?$filter=internalemailaddress eq '"+oUser.internalemailaddress+"'",oDataAPI.dataverse,oEnvir.displayName);
+  if(aWhoAmI){
+    oWhoAmI=aWhoAmI.value[0].systemuserid
+  }else{
     oWhoAmI=null;
   }
-
   if(!oWhoAmI){
     iAPICount++;
     eData.innerHTML+="<i class='fa-solid fa-globe' style='color:red' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" failed, id: cant find<br>";  
-    }else{
-      if(bFirst){   
-        bFirst=false;     
-        sURLuser=oEnvir.url+"/api/data/v9.2/systemusers("+oWhoAmI.UserId+")";
-        oUser= await fetchAPIData(sURLuser, oDataAPI.dataverse);
-        eData.innerHTML+="Hello "+oUser.fullname+"<br>";        
-      }
-      eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" identified, id:"+oWhoAmI.UserId+"<br>";
+  }else{
+    eData.innerHTML+="<i class='fa-solid fa-globe' aria-hidden='true'></i>&nbsp;"+oEnvir.displayName+" identified, id:"+oWhoAmI+"<br>";
     
     ////flows   
     const aFlows=await fetchAPIData(sApiUrlFlow+oEnvir.id+"/flows?api-version=2016-11-01",oDataAPI.flow,oEnvir.displayName )
@@ -177,7 +172,7 @@ async function getData(oEnvir,bDestroy){
     }
       
     ////apps
-    const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdtime ge "+sDate+" and createdtime le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
+    const aApps =await fetchAPIData(oEnvir.url+"/api/data/v9.2/canvasapps?$filter=_ownerid_value eq '"+oWhoAmI+"' and createdtime ge "+sDate+" and createdtime le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aApps){
       aApps.value.forEach(app =>{
         aAllData.push(
@@ -202,7 +197,7 @@ async function getData(oEnvir,bDestroy){
     }
     
     ////agents
-    const aBots =await fetchAPIData(oEnvir.url+"/api/data/v9.2/bots?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
+    const aBots =await fetchAPIData(oEnvir.url+"/api/data/v9.2/bots?$filter=_ownerid_value eq '"+oWhoAmI+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aBots){
       aBots.value.forEach(bot =>{
         aAllData.push(
@@ -227,18 +222,18 @@ async function getData(oEnvir,bDestroy){
     }
     
     ///solutions
-    const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
+    const aSolutions =await fetchAPIData(oEnvir.url+"/api/data/v9.2/solutions?$filter=_createdby_value eq '"+oWhoAmI+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aSolutions){    
       aSolutions.value.forEach(sol =>{   
         if(!sol.uniquename.includes("msdyn")){
-          getComponents(oEnvir,sol,oWhoAmI.UserId)
+          getComponents(oEnvir,sol,oWhoAmI)
         }       
       })      
       eData.innerHTML+="<i class='fa-solid fa-box-open'></i>&nbsp;"+oEnvir.displayName+" solutions found "+aSolutions.value.length+"<br>";
     }
 
     ////connection refs
-    const aConnections =await fetchAPIData(oEnvir.url+"/api/data/v9.2/connectionreferences?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
+    const aConnections =await fetchAPIData(oEnvir.url+"/api/data/v9.2/connectionreferences?$filter=_ownerid_value eq '"+oWhoAmI+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aConnections){
       aConnections.value.forEach(con =>{
         aAllData.push(
@@ -263,7 +258,7 @@ async function getData(oEnvir,bDestroy){
     }   
     
     ////environment variables
-    const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI.UserId+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
+    const aVaraiables =await fetchAPIData(oEnvir.url+"/api/data/v9.2/environmentvariabledefinitions?$filter=_ownerid_value eq '"+oWhoAmI+"' and createdon gt "+sDate+" and createdon le "+sDateTo,oDataAPI.dataverse,oEnvir.displayName);
     if(aVaraiables){
       aVaraiables.value.forEach(eva =>{
         aAllData.push(
