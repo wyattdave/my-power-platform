@@ -5,9 +5,7 @@ let variableChart;
 let connectionChart;
 let componentChart;
 
-function loadCharts(aData,aEnvironments,bRefresh){
-
- 
+function loadCharts(aData,aEnvironments,bRefresh,sCurrentGeo){
    
 /*  plan was to remove your default solution as is always top, but it caused issues just for small use case so left off for now    
 if(eFilter.value==""){
@@ -364,7 +362,6 @@ function blurbage(aData,aEnvironments){
     let sSolutionVariables={displayName:"N/A",count:0};
     if(aSolutions.length>0){sSolutionVariables={displayName:aSolutions[0].displayName,count:aSolutions[0].contents.vars}}
 
-
     aSolutions=aData.filter(item =>{return item.type=="solution"}).sort((a, b) => {
         return b.contents.components - a.contents.components;
     });
@@ -391,8 +388,9 @@ function blurbage(aData,aEnvironments){
     }else{
         sHtml+="<img src='assets/img/agent.svg' style='height:20px;padding-right:10px'/>&nbsp;You are Agent Smith<br>"
     }    
-
+    sHtml+="Geo: <b>"+sCurrentGeo+"</b><br>";
     sHtml+="<b>"+aEnvironments.length+"</b> Environments, <b>"+aEnvironments.filter(env =>{return env.components>0}).length+"</b> used<br>";
+    sHtml+="<b>"+iNonGeo+"</b> Environments from other geos not shown<br>"
     sHtml+="<br><b>Totals</b><br>Flows: <b>"+aData.filter(item =>{return item.type=="flow"}).length+"</b>, top trigger is <b>"+sTopTrigger+"</b><br>";
     sHtml+="Apps: <b>"+aData.filter(item =>{return item.type=="app"}).length+"</b><br>";
     sHtml+="Agents: <b>"+aData.filter(item =>{return item.type=="agent"}).length+"</b><br>";

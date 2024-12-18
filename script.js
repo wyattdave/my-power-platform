@@ -12,7 +12,9 @@ let aAllData=[];
 let iAPICount=0;
 let aEnvironmentsMaster=[];
 let aEnvironmentData=[];
+let iNonGeo=0;
 let oUser;
+let sCurrentGeo="";
 const eData=document.getElementById("data");
 const eDate=document.getElementById("input-date");
 const eDateTo=document.getElementById("input-dateTo");
@@ -46,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
         load();      
       } else if(localStorage.getItem("data")){
         aAllData=JSON.parse(localStorage.getItem("data"));
+        if( localStorage.getItem("geo")){sCurrentGeo=localStorage.getItem("geo")}
         aEnvironmentsMaster=JSON.parse(localStorage.getItem("environments"));
         loadCharts(aAllData,aEnvironmentsMaster,false);
         sDate = localStorage.getItem("date");
@@ -87,7 +90,6 @@ function downloadCsv(){
       environment:item.environment.displayName,
       environmentId:item.environment.id,
       environmentsUrl:item.environment.url
-
     })
   })
 
@@ -115,11 +117,16 @@ function setDate(){
 
 async function load(){
   eDiv.style.display=null;
-  aEnvironmentsMaster=await getEnvironments(oDataAPI.envirs,oDataAPI.url,"")
-  console.log(aEnvironmentsMaster)
+  
+  const aEnvironmentsAllGeos=await getEnvironments(oDataAPI.envirs,oDataAPI.url,"")
+  const sThisEnvironment=oDataAPI.user.split("/api/data")[0];
+  sCurrentGeo=aEnvironmentsAllGeos.find(envir => envir.url==sThisEnvironment).location;
+  aEnvironmentsMaster=aEnvironmentsAllGeos.filter(envir =>{return envir.location==sCurrentGeo})
+  iNonGeo=aEnvironmentsAllGeos.length-aEnvironmentsMaster.length;
   eTotal.innerText=aEnvironmentsMaster.length;
+  
   oUser =await fetchAPIData(oDataAPI.user,oDataAPI.dataverse,"");
-  eData.innerHTML="Hello "+oUser.fullname+"<br>"; 
+  eData.innerHTML="Hello "+oUser.fullname+", all environments in "+sCurrentGeo+" selected<br>"; 
   aEnvironmentsMaster.forEach(envir =>{    
     getData(envir,false)
   })  
@@ -304,13 +311,13 @@ async function getData(oEnvir,bDestroy){
             components:aThisEnvironment.length
         })
     })
-    loadCharts(aAllData,aEnvironmentData,bDestroy);
+    loadCharts(aAllData,aEnvironmentData,bDestroy,sCurrentGeo);
+    localStorage.setItem("geo",sCurrentGeo);
     localStorage.setItem("data",JSON.stringify(aAllData));
     localStorage.setItem("environments",JSON.stringify(aEnvironmentsMaster));
     localStorage.setItem("date",sDate);
     localStorage.setItem("dateTo",sDateTo);
-  }
-  
+  }  
 }
 
 async function getComponents(oEnvir,sol,sUser){
@@ -357,7 +364,7 @@ function downloadJSON(data,sFileName) {
 async function getEnvironments(sEnvirToken, sEnvirURL) {
   try {
     const data = await fetchAPIData(sEnvirURL, sEnvirToken,"");
-
+    console.log(data.value)
     const aEnvironments = data.value
       .sort((a, b) => {
         const titleA = a.properties.displayName.toUpperCase();
@@ -375,7 +382,8 @@ async function getEnvironments(sEnvirToken, sEnvirURL) {
           displayName: item.properties.displayName,
           id: item.name,
           url: sUrlAPI,
-          dyn: sUrl
+          dyn: sUrl,
+          location: item.location
         };
       });
 
@@ -419,7 +427,8 @@ async function fetchAPIData(url, token, environment) {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      if (response.status == 401 && !url.includes("WhoAmI")) {
+      console.log("Error fetching API data:", response.status+", "+response.statusText);
+      if (response.status == 401 && !url.includes("WhoAmI")) {        
         eData.innerHTML+="<br><b style='color:red;'>"+environment+" Invalid token, refresh https://make.powerautomate.com page to update</b><br>";
         return null;
       }
@@ -427,6 +436,38 @@ async function fetchAPIData(url, token, environment) {
         eData.innerHTML+="<br><b style='color:red;'>"+environment+" WhoAmI failed</b><br>";
         return null;
       }
+    }
+    const data = await response.json();
+    return data;
+ } catch (error) {
+   console.log("Error fetching API data:", error);
+   return null
+ }
+}
+
+
+//// not in use - need to add "https://make.powerapps.com/*" to manifest
+async function test(token){
+  const oRefresh=await fetchAPIDataPost("https://make.powerapps.com/api/exchangeToken", token,"https://eu-uk-dev.api.crm11.dynamics.com"); 
+  console.log(oRefresh);
+}
+
+async function fetchAPIDataPost(url, token, environment) {
+  try {
+    const body={"audience":environment.replace(".api",""),"tenantId":"common","isCaeEnabled":false,"aadClientId":"a8f7a65c-f5ba-4859-b2d6-df772c264e9d"};
+    const options = {
+      method:"POST",
+      body:JSON.stringify(body),
+      headers: {
+        Authorization: token
+      },
+    };
+    
+    const response = await fetch(url, options);
+    console.log(options,body,response)
+    if (!response.ok) {
+      console.log("Error fetching API data:", response.status+", "+response.statusText);
+      return null
     }
     const data = await response.json();
     return data;

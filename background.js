@@ -3,6 +3,7 @@ let sFlowAPI="";
 let sDataAPI="";
 let sAppAPI="";
 let sEnvirAPI="";
+let sTokenAPI="";
 let sUserUrl="";
 let sEnvironment="";
 let sEnvironmentsUrl="";
@@ -31,6 +32,7 @@ const rGuid=new RegExp("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]
           "app":sAppAPI,
           "envirs":sEnvirAPI,
           "url":sEnvironmentsUrl,
+          "token":sTokenAPI,
           "user":sUserUrl
         }
         sendResponse(oTokens);
@@ -42,8 +44,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
   const bFlow=details.url.includes(".api.flow.microsoft.com/")&&!details.url.includes("scopes/admin/");
   const bApp=details.url.includes("environment.api.powerplatform.com");
   const bTenant=details.url.includes(".tenant.api.powerplatform.com/");
-  if (bFlow||bData||bApp||bTenant) {
-    for(var i = 0; i < details.requestHeaders.length;i++) {
+  const bToken=details.url=="https://make.powerapps.com/api/exchangeToken";
+
+  if (bFlow||bData||bApp||bTenant || bToken) {
+    for(var i = 0; i < details.requestHeaders.length;i++) {      
       if(details.requestHeaders[i].name.toLowerCase() == "authorization"){
         if(bFlow){
           sFlowAPI=details.requestHeaders[i].value;
@@ -51,8 +55,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
             bEnvir=true;
             sEnvirAPI=sFlowAPI;
             sEnvironmentsUrl=sApiUrlFlowEnvir;
-          }
-          
+          }          
         }
         if(bData){
           sDataAPI=details.requestHeaders[i].value;           
@@ -67,8 +70,11 @@ chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
             sEnvirAPI=details.requestHeaders[i].value ;
             sEnvironmentsUrl=sApiUrlApp.replace("<tenantID>",sEnvironment);
           }  
-          
         }   
+        if(bToken){
+          sTokenAPI=details.requestHeaders[i].value;  
+        }
+ 
         if(details.url.includes("api/data/v9.2/systemusers(")){
           sUserUrl=details.url.split("/Microsoft.Dynamics")[0]
         }     
@@ -79,6 +85,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
   { urls: ["<all_urls>"] },
   ["requestHeaders", "extraHeaders"]
 );
-///urls: ["https://*.api.flow.microsoft.com/*","https://make.powerautomate.com/*"] },
+///urls: ["https://*.api.flow.microsoft.com/*","https://make.powerautomate.com/*", "https://*.api.powerapps.com/*",  "https://make.powerapps.com/*","https://*.dynamics.com/api/data/v9*"] ,
 
 
